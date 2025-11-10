@@ -1,0 +1,6 @@
+---
+source: crates/cifmt/src/tool/cargo_test.rs
+expression: formatted
+---
+::endgroup::
+::notice title=Test Failed: my_test::should_work (executed in 0.00s)::assertion failed

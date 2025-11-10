@@ -1,0 +1,8 @@
+---
+source: crates/cifmt/src/tool/cargo_test.rs
+expression: formatted
+---
+::endgroup::
+::notice title=Test Failed: test_multiline::line 1
+line 2
+line 3

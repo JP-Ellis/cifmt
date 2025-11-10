@@ -22,6 +22,7 @@
 
 pub mod ci;
 pub mod message;
+pub mod tool;
 
 pub mod prelude {
     pub use crate::ci::Platform;

@@ -1,0 +1,6 @@
+---
+source: crates/cifmt/src/tool/cargo_test.rs
+expression: formatted
+---
+::endgroup::
+::notice title=Test Discovery::Discovered 18 items: 15 tests, 3 benchmarks, 2 ignored

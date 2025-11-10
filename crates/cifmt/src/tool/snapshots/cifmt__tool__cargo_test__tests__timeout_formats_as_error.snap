@@ -1,0 +1,6 @@
+---
+source: crates/cifmt/src/tool/cargo_test.rs
+expression: formatted
+---
+::endgroup::
+::error title=Test Timeout::test_slow

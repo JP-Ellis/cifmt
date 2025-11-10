@@ -17,12 +17,13 @@
 //!    (cargo test, nextest, mypy, etc.).
 //!
 //! 3. **Messages** ([`CiMessage`]): A trait for types that can be formatted as
-//!    CI messages. The library provides [`message::FileAnnotation`] as a common
-//!    intermediate format for file-based annotations.
+//!    CI messages.
 //!
 
 pub mod ci;
+pub mod message;
 
 pub mod prelude {
     pub use crate::ci::Platform;
+    pub use crate::message::CiMessage;
 }

@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_test.rs
+expression: formatted
+---
+::group::Test Discovery

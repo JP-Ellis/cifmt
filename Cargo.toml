@@ -10,7 +10,14 @@ members = ["crates/*"]
   repository = "https://github.com/JP-Ellis/cifmt"
 
   [workspace.dependencies]
-  tracing = "0.1.41"
+  bon        = "3.0"
+  serde      = { version = "1.0", features = ["derive"] }
+  serde_json = "1.0"
+  tracing    = "0.1"
+
+  # Dev dependencies, pinned to ensure reproducibility
+  pretty_assertions = "=1.4.1"
+  rstest            = "=0.26.1"
 
   ##############################################################################
   ## Lints

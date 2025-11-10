@@ -1,0 +1,20 @@
+#:schema https://www.schemastore.org/cargo.json
+[package]
+description = "CI message formatter"
+name        = "cifmt-cli"
+version     = "1.0.0"
+
+authors = ["JP-Ellis <josh@jpellis.me>"]
+
+edition = "2024"
+
+license    = { workspace = true }
+readme     = { workspace = true }
+repository = { workspace = true }
+
+[[bin]]
+name = "cifmt"
+path = "src/main.rs"
+
+[dependencies]
+tracing = { workspace = true }

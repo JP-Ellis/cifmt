@@ -1,15 +1,28 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! CI message formatter library.
+//!
+//! `cifmt` provides types and utilities for parsing structured output from
+//! various development tools (like test runners, linters, etc.) and formatting
+//! them for different CI platforms (GitHub Actions, GitLab CI, etc.), with a
+//! focus on rich annotations, groupings, severity levels, file locations, etc.
+//!
+//! # Overview
+//!
+//! The library is organized around three main concepts:
+//!
+//! 1. **CI Platforms** ([`ci`]): Contains platform-specific implementations
+//!    that implement the [`ci::Platform`] trait for formatting messages
+//!    according to the conventions of each CI system.
+//!
+//! 2. **Tool Formats** ([`tool`]): Parsers for specific tool output formats
+//!    (cargo test, nextest, mypy, etc.).
+//!
+//! 3. **Messages** ([`CiMessage`]): A trait for types that can be formatted as
+//!    CI messages. The library provides [`message::FileAnnotation`] as a common
+//!    intermediate format for file-based annotations.
+//!
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use pretty_assertions::assert_eq;
+pub mod ci;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub mod prelude {
+    pub use crate::ci::Platform;
 }

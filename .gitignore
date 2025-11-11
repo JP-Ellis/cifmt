@@ -46,6 +46,9 @@ Cargo.lock
 lcov.info
 cobertura.xml
 
+# Rust ICE
+rustc-ice-*.txt
+
 ########################################
 ## Global/Archives.gitignore
 ########################################

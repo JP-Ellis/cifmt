@@ -2,3 +2,8 @@
 [profile.ci]
 # In CI, we want to run all tests instead of failing fast
 fail-fast = false
+
+  [profile.ci.junit]
+  output               = "junit.xml"
+  store-failure-output = true
+  store-success-output = true

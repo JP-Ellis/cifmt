@@ -115,6 +115,12 @@ impl GitHub {
     /// # Arguments
     ///
     /// * `message` - The notice message to display.
+    /// * `file` - Optional file path for the annotation.
+    /// * `line` - Optional starting line number (1-indexed).
+    /// * `col` - Optional starting column number (1-indexed).
+    /// * `end_line` - Optional ending line number.
+    /// * `end_column` - Optional ending column number.
+    /// * `title` - Optional custom title for the annotation.
     ///
     /// # Returns
     ///
@@ -168,6 +174,12 @@ impl GitHub {
     /// # Arguments
     ///
     /// * `message` - The warning message to display.
+    /// * `file` - Optional file path for the annotation.
+    /// * `line` - Optional starting line number (1-indexed).
+    /// * `col` - Optional starting column number (1-indexed).
+    /// * `end_line` - Optional ending line number.
+    /// * `end_column` - Optional ending column number.
+    /// * `title` - Optional custom title for the annotation.
     ///
     /// # Returns
     ///
@@ -222,6 +234,12 @@ impl GitHub {
     /// # Arguments
     ///
     /// * `message` - The error message to display.
+    /// * `file` - Optional file path for the annotation.
+    /// * `line` - Optional starting line number (1-indexed).
+    /// * `col` - Optional starting column number (1-indexed).
+    /// * `end_line` - Optional ending line number.
+    /// * `end_column` - Optional ending column number.
+    /// * `title` - Optional custom title for the annotation.
     ///
     /// # Returns
     ///

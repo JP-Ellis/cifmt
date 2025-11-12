@@ -108,8 +108,8 @@ impl GitHub {
     ///
     /// let debug_message = GitHub::debug("This is a debug message.");
     /// ```
-    pub fn debug(message: &str) -> String {
-        format!("::debug::{message}\n")
+    pub fn debug(message: impl AsRef<str>) -> String {
+        format!("::debug::{}\n", message.as_ref())
     }
 
     /// Creates a builder for a notice message.
@@ -149,7 +149,7 @@ impl GitHub {
     /// ```
     #[builder(finish_fn = format)]
     pub fn notice(
-        message: &str,
+        #[builder(start_fn)] message: impl AsRef<str>,
         file: Option<&str>,
         line: Option<u32>,
         col: Option<u32>,
@@ -165,7 +165,7 @@ impl GitHub {
             end_column,
             title,
         };
-        format!("::notice {params}::{message}\n")
+        format!("::notice {params}::{}\n", message.as_ref())
     }
 
     /// Creates a builder for a warning message.
@@ -206,7 +206,7 @@ impl GitHub {
     /// ```
     #[builder(finish_fn = format)]
     pub fn warning(
-        message: &str,
+        #[builder(start_fn)] message: impl AsRef<str>,
         file: Option<&str>,
         line: Option<u32>,
         col: Option<u32>,
@@ -222,7 +222,7 @@ impl GitHub {
             end_column,
             title,
         };
-        format!("::warning {params}::{message}\n")
+        format!("::warning {params}::{}\n", message.as_ref())
     }
 
     /// Creates a builder for an error message.
@@ -264,7 +264,7 @@ impl GitHub {
     /// ```
     #[builder(finish_fn = format)]
     pub fn error(
-        message: &str,
+        #[builder(start_fn)] message: impl AsRef<str>,
         file: Option<&str>,
         line: Option<u32>,
         col: Option<u32>,
@@ -280,7 +280,7 @@ impl GitHub {
             end_column,
             title,
         };
-        format!("::error {params}::{message}\n")
+        format!("::error {params}::{}\n", message.as_ref())
     }
 
     /// Starts a collapsible group in the workflow log.
@@ -307,8 +307,8 @@ impl GitHub {
     /// println!("Compiling...");
     /// print!("{}", GitHub::endgroup());
     /// ```
-    pub fn group(title: &str) -> String {
-        format!("::group::{title}\n")
+    pub fn group(title: impl AsRef<str>) -> String {
+        format!("::group::{}\n", title.as_ref())
     }
 
     /// Ends a collapsible group in the workflow log.
@@ -355,8 +355,8 @@ impl GitHub {
     /// print!("{}", GitHub::add_mask(secret));
     /// println!("The secret is: {}", secret); // Will print: The secret is: ***
     /// ```
-    pub fn add_mask(value: &str) -> String {
-        format!("::add-mask::{value}\n")
+    pub fn add_mask(value: impl AsRef<str>) -> String {
+        format!("::add-mask::{}\n", value.as_ref())
     }
 
     /// Stops processing workflow commands.
@@ -385,8 +385,8 @@ impl GitHub {
     /// print!("{}", GitHub::resume_commands(token));
     /// println!("::warning:: This WILL be processed as a command");
     /// ```
-    pub fn stop_commands(token: &str) -> String {
-        format!("::stop-commands::{token}\n")
+    pub fn stop_commands(token: impl AsRef<str>) -> String {
+        format!("::stop-commands::{}\n", token.as_ref())
     }
 
     /// Resumes processing workflow commands.
@@ -414,8 +414,8 @@ impl GitHub {
     /// println!("Commands are disabled here");
     /// print!("{}", GitHub::resume_commands(token));
     /// ```
-    pub fn resume_commands(token: &str) -> String {
-        format!("::{token}::\n")
+    pub fn resume_commands(token: impl AsRef<str>) -> String {
+        format!("::{}::\n", token.as_ref())
     }
 
     /// Enables or disables echoing of workflow commands.
@@ -466,14 +466,13 @@ mod tests {
 
     #[rstest]
     fn notice_simple() {
-        let result = GitHub::notice().message("Build completed").format();
+        let result = GitHub::notice("Build completed").format();
         insta::assert_snapshot!(result, @"::notice ::Build completed\n");
     }
 
     #[rstest]
     fn notice_with_full_params() {
-        let result = GitHub::notice()
-            .message("Full annotation")
+        let result = GitHub::notice("Full annotation")
             .file("src/main.rs")
             .line(42)
             .col(10)
@@ -486,14 +485,13 @@ mod tests {
 
     #[rstest]
     fn warning_simple() {
-        let result = GitHub::warning().message("Deprecated API").format();
+        let result = GitHub::warning("Deprecated API").format();
         insta::assert_snapshot!(result, @"::warning ::Deprecated API\n");
     }
 
     #[rstest]
     fn warning_with_params() {
-        let result = GitHub::warning()
-            .message("This will be removed")
+        let result = GitHub::warning("This will be removed")
             .file("src/main.rs")
             .line(50)
             .col(5)
@@ -504,14 +502,13 @@ mod tests {
 
     #[rstest]
     fn error_simple() {
-        let result = GitHub::error().message("Build failed").format();
+        let result = GitHub::error("Build failed").format();
         insta::assert_snapshot!(result, @"::error ::Build failed\n");
     }
 
     #[rstest]
     fn error_with_params() {
-        let result = GitHub::error()
-            .message("Unsupported syntax")
+        let result = GitHub::error("Unsupported syntax")
             .file("src/main.rs")
             .line(10)
             .col(1)

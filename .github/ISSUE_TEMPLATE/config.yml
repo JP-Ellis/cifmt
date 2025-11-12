@@ -3,7 +3,7 @@ blank_issues_enabled: true
 
 contact_links:
   - name: ❓ Usage question - GitHub Discussions
-    url: https://github.com/JP-Ellis/amber-api/discussions
+    url: https://github.com/JP-Ellis/cifmt/discussions
     about: >-
       Use GitHub Discussions for general usage questions, requiring a
       maintainer's answer. Make sure the question wasn't already asked.

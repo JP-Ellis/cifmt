@@ -5,7 +5,6 @@
 
 use bon::bon;
 use core::fmt;
-use std::path::Path;
 
 use crate::ci::Platform;
 
@@ -44,7 +43,7 @@ impl fmt::Display for GitHub {
 #[derive(Debug, Clone, Default)]
 struct AnnotationParams<'a> {
     /// The file path to annotate.
-    file: Option<&'a Path>,
+    file: Option<&'a str>,
     /// The starting line number (1-indexed).
     line: Option<u32>,
     /// The starting column number (1-indexed).
@@ -77,7 +76,7 @@ impl fmt::Display for AnnotationParams<'_> {
             };
         }
 
-        write_param!("file={}", self.file.map(|p| p.display()));
+        write_param!("file={}", self.file);
         write_param!("line={}", self.line);
         write_param!("col={}", self.col);
         write_param!("endLine={}", self.end_line);
@@ -149,12 +148,9 @@ impl GitHub {
     ///     .format();
     /// ```
     #[builder(finish_fn = format)]
-    #[builder(on(Option<&Path>, into))]
-    #[builder(on(Option<u32>, into))]
-    #[builder(on(Option<&str>, into))]
     pub fn notice(
         message: &str,
-        file: Option<&Path>,
+        file: Option<&str>,
         line: Option<u32>,
         col: Option<u32>,
         end_line: Option<u32>,
@@ -209,12 +205,9 @@ impl GitHub {
     ///     .format();
     /// ```
     #[builder(finish_fn = format)]
-    #[builder(on(Option<&Path>, into))]
-    #[builder(on(Option<u32>, into))]
-    #[builder(on(Option<&str>, into))]
     pub fn warning(
         message: &str,
-        file: Option<&Path>,
+        file: Option<&str>,
         line: Option<u32>,
         col: Option<u32>,
         end_line: Option<u32>,
@@ -270,12 +263,9 @@ impl GitHub {
     ///     .format();
     /// ```
     #[builder(finish_fn = format)]
-    #[builder(on(Option<&Path>, into))]
-    #[builder(on(Option<u32>, into))]
-    #[builder(on(Option<&str>, into))]
     pub fn error(
         message: &str,
-        file: Option<&Path>,
+        file: Option<&str>,
         line: Option<u32>,
         col: Option<u32>,
         end_line: Option<u32>,
@@ -463,17 +453,10 @@ impl GitHub {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
     use rstest::*;
 
     use crate::ci::GitHub;
     use crate::ci::Platform;
-
-    #[fixture]
-    fn sample_file() -> PathBuf {
-        PathBuf::from("src/main.rs")
-    }
 
     #[rstest]
     fn debug() {
@@ -488,10 +471,10 @@ mod tests {
     }
 
     #[rstest]
-    fn notice_with_full_params(sample_file: PathBuf) {
+    fn notice_with_full_params() {
         let result = GitHub::notice()
             .message("Full annotation")
-            .file(sample_file.as_path())
+            .file("src/main.rs")
             .line(42)
             .col(10)
             .end_line(45)
@@ -508,10 +491,10 @@ mod tests {
     }
 
     #[rstest]
-    fn warning_with_params(sample_file: PathBuf) {
+    fn warning_with_params() {
         let result = GitHub::warning()
             .message("This will be removed")
-            .file(sample_file.as_path())
+            .file("src/main.rs")
             .line(50)
             .col(5)
             .title("Deprecation Warning")
@@ -526,10 +509,10 @@ mod tests {
     }
 
     #[rstest]
-    fn error_with_params(sample_file: PathBuf) {
+    fn error_with_params() {
         let result = GitHub::error()
             .message("Unsupported syntax")
-            .file(sample_file.as_path())
+            .file("src/main.rs")
             .line(10)
             .col(1)
             .end_line(10)

@@ -32,6 +32,12 @@ impl Platform for GitHub {
     }
 }
 
+impl fmt::Display for GitHub {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "GitHub Actions")
+    }
+}
+
 /// Parameters for file annotations (error, warning, notice).
 ///
 /// Used to specify optional location and metadata for annotations.

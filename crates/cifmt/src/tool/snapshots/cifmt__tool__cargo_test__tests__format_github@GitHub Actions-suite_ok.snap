@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_test.rs
+expression: formatted
+---
+::notice title=Test Suite Passed::40 passed, 0 failed, 2 ignored, 0 measured, 5 filtered out in 1.23s

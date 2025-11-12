@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_test.rs
+expression: formatted
+---
+::debug::Discovered test: test_example (ignored: false, message: None, location: src/lib.rs:10:4-15:5)

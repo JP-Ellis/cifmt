@@ -482,7 +482,16 @@ mod tests {
     use pretty_assertions::assert_eq;
     use rstest::rstest;
 
+    use crate::message::CiMessage;
     use crate::tool::cargo_test::{LibTestMessage, SuiteMessage};
+
+    macro_rules! set_snapshot_suffix {
+        ($($expr:expr),*) => {
+            let mut settings = insta::Settings::clone_current();
+            settings.set_snapshot_suffix(format!($($expr,)*));
+            let _guard = settings.bind_to_scope();
+        }
+    }
 
     #[rstest]
     #[case::suite_discovery(
@@ -597,235 +606,115 @@ mod tests {
         assert_eq!(msg, expected);
     }
 
-    // #[rstest]
-    // #[case::discovery(
-    //     r#"{"type":"suite","event":"discovery"}"#,
-    //     |msg: LibTestMessage| matches!(msg, LibTestMessage::Suite(SuiteMessage::Discovery))
-    // )]
-    // #[case::completed(
-    //     r#"{"type":"suite","event":"completed","tests":42,"benchmarks":5,"total":47,"ignored":3}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Suite(SuiteMessage::Completed {
-    //             tests: 42,
-    //             benchmarks: 5,
-    //             total: 47,
-    //             ignored: 3,
-    //         })
-    //     )
-    // )]
-    // #[case::started(
-    //     r#"{"type":"suite","event":"started","test_count":42}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Suite(SuiteMessage::Started {
-    //             test_count: 42,
-    //             shuffle_seed: None,
-    //         })
-    //     )
-    // )]
-    // #[case::started_with_shuffle(
-    //     r#"{"type":"suite","event":"started","test_count":42,"shuffle_seed":12345}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Suite(SuiteMessage::Started {
-    //             test_count: 42,
-    //             shuffle_seed: Some(12345),
-    //         })
-    //     )
-    // )]
-    // #[case::ok(
-    //     r#"{"type":"suite","event":"ok","passed":40,"failed":0,"ignored":2,"measured":0,"filtered_out":5,"exec_time":1.234}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Suite(SuiteMessage::Ok {
-    //             passed: 40,
-    //             failed: 0,
-    //             ignored: 2,
-    //             measured: 0,
-    //             filtered_out: 5,
-    //             exec_time: Some(_),
-    //         })
-    //     )
-    // )]
-    // #[case::failed(
-    //     r#"{"type":"suite","event":"failed","passed":38,"failed":2,"ignored":2,"measured":0,"filtered_out":5,"exec_time":1.567}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Suite(SuiteMessage::Failed {
-    //             passed: 38,
-    //             failed: 2,
-    //             ignored: 2,
-    //             measured: 0,
-    //             filtered_out: 5,
-    //             exec_time: Some(_),
-    //         })
-    //     )
-    // )]
-    // fn suite_messages(#[case] json: &str, #[case] matcher: fn(LibTestMessage) -> bool) {
-    //     let msg: LibTestMessage = serde_json::from_str(json).expect("Failed to deserialize");
-    //     assert!(matcher(msg));
-    // }
+    macro_rules! platform_format {
+        ($fn:ident, $platform:expr) => {
+            #[rstest]
+            #[case(LibTestMessage::Suite(SuiteMessage::Discovery), "suite_discovery")]
+            #[case(LibTestMessage::Suite(SuiteMessage::Completed {
+                    tests: 42,
+                    benchmarks: 5,
+                    total: 47,
+                    ignored: 3,
+                }),
+                "suite_completed"
+            )]
+            #[case(LibTestMessage::Suite(SuiteMessage::Started {
+                    test_count: 42,
+                    shuffle_seed: None,
+                }),
+                "suite_started"
+            )]
+            #[case(LibTestMessage::Suite(SuiteMessage::Ok {
+                    passed: 40,
+                    failed: 0,
+                    ignored: 2,
+                    measured: 0,
+                    filtered_out: 5,
+                    exec_time: Some(1.234),
+                }),
+                "suite_ok"
+            )]
+            #[case(LibTestMessage::Suite(SuiteMessage::Failed {
+                    passed: 38,
+                    failed: 2,
+                    ignored: 2,
+                    measured: 0,
+                    filtered_out: 5,
+                    exec_time: Some(1.567),
+                }),
+                "suite_failed"
+            )]
+            #[case(LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Discovered {
+                    name: "test_example".to_string(),
+                    ignore: false,
+                    ignore_message: None,
+                    source_path: "src/lib.rs".to_string(),
+                    start_line: 10,
+                    start_col: 4,
+                    end_line: 15,
+                    end_col: 5,
+                }),
+                "test_discovered"
+            )]
+            #[case(
+                            LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Started {
+                                name: "test_example".to_string(),
+                            }),
+                            "test_started"
+                        )]
+            #[case(
+                            LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Ok {
+                                name: "test_example".to_string(),
+                                exec_time: Some(0.001),
+                                stdout: None,
+                            }),
+                            "test_ok"
+                        )]
+            #[case(
+                            LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Failed {
+                                name: "test_failing".to_string(),
+                                exec_time: Some(0.003),
+                                stdout: None,
+                                message: Some("assertion failed".to_string()),
+                            }),
+                            "test_failed"
+                        )]
+            #[case(
+                            LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Timeout {
+                                name: "test_hanging".to_string(),
+                            }),
+                            "test_timeout"
+                        )]
+            #[case(
+                            LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Ignored {
+                                name: "test_ignored".to_string(),
+                                message: None,
+                            }),
+                            "test_ignored"
+                        )]
+            #[case(
+                            LibTestMessage::Bench(crate::tool::cargo_test::BenchMessage {
+                                name: "bench_example".to_string(),
+                                median: 1234,
+                                deviation: 56,
+                                mib_per_second: None,
+                            }),
+                            "bench"
+                        )]
+            #[case(
+                            LibTestMessage::Report(crate::tool::cargo_test::ReportMessage {
+                                total_time: 10.5,
+                                compilation_time: 8.2,
+                            }),
+                            "report"
+                        )]
+            fn $fn(#[case] message: LibTestMessage, #[case] suffix: &str) {
+                set_snapshot_suffix!("{}-{suffix}", $platform);
+                let formatted = message.format();
+                insta::assert_snapshot!(formatted);
+            }
+        };
+    }
 
-    // #[rstest]
-    // #[case::discovered(
-    //     r#"{"type":"test","event":"discovered","name":"test_example","ignore":false,"source_path":"src/lib.rs","start_line":10,"start_col":4,"end_line":15,"end_col":5}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Test(TestMessage::Discovered {
-    //             name: ref n,
-    //             ignore: false,
-    //             ignore_message: None,
-    //             source_path: ref sp,
-    //             start_line: 10,
-    //             start_col: 4,
-    //             end_line: 15,
-    //             end_col: 5,
-    //         }) if n == "test_example" && sp == "src/lib.rs"
-    //     )
-    // )]
-    // #[case::discovered_ignored(
-    //     r#"{"type":"test","event":"discovered","name":"test_ignored","ignore":true,"ignore_message":"Not implemented yet","source_path":"src/lib.rs","start_line":20,"start_col":4,"end_line":22,"end_col":5}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Test(TestMessage::Discovered {
-    //             name: ref n,
-    //             ignore: true,
-    //             ignore_message: Some(ref im),
-    //             ..
-    //         }) if n == "test_ignored" && im == "Not implemented yet"
-    //     )
-    // )]
-    // #[case::started(
-    //     r#"{"type":"test","event":"started","name":"test_example"}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Test(TestMessage::Started { name: ref n })
-    //         if n == "test_example"
-    //     )
-    // )]
-    // #[case::ok(
-    //     r#"{"type":"test","event":"ok","name":"test_example","exec_time":0.001}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Test(TestMessage::Ok {
-    //             name: ref n,
-    //             exec_time: Some(_),
-    //             stdout: None,
-    //         }) if n == "test_example"
-    //     )
-    // )]
-    // #[case::ok_with_stdout(
-    //     r#"{"type":"test","event":"ok","name":"test_example","exec_time":0.002,"stdout":"Test output\n"}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Test(TestMessage::Ok {
-    //             name: ref n,
-    //             exec_time: Some(_),
-    //             stdout: Some(ref s),
-    //         }) if n == "test_example" && s == "Test output\n"
-    //     )
-    // )]
-    // #[case::failed(
-    //     r#"{"type":"test","event":"failed","name":"test_failing","exec_time":0.003,"message":"assertion failed"}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Test(TestMessage::Failed {
-    //             name: ref n,
-    //             exec_time: Some(_),
-    //             stdout: None,
-    //             message: Some(ref m),
-    //         }) if n == "test_failing" && m == "assertion failed"
-    //     )
-    // )]
-    // #[case::failed_with_stdout(
-    //     r#"{"type":"test","event":"failed","name":"test_failing","exec_time":0.004,"stdout":"Debug output\n","message":"assertion failed: left != right"}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Test(TestMessage::Failed {
-    //             name: ref n,
-    //             exec_time: Some(_),
-    //             stdout: Some(ref s),
-    //             message: Some(ref m),
-    //         }) if n == "test_failing" && s == "Debug output\n" && m == "assertion failed: left != right"
-    //     )
-    // )]
-    // #[case::timeout(
-    //     r#"{"type":"test","event":"timeout","name":"test_hanging"}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Test(TestMessage::Timeout { name: ref n })
-    //         if n == "test_hanging"
-    //     )
-    // )]
-    // #[case::ignored(
-    //     r#"{"type":"test","event":"ignored","name":"test_ignored"}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Test(TestMessage::Ignored {
-    //             name: ref n,
-    //             message: None,
-    //         }) if n == "test_ignored"
-    //     )
-    // )]
-    // #[case::ignored_with_message(
-    //     r#"{"type":"test","event":"ignored","name":"test_ignored","message":"Waiting for upstream fix"}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Test(TestMessage::Ignored {
-    //             name: ref n,
-    //             message: Some(ref m),
-    //         }) if n == "test_ignored" && m == "Waiting for upstream fix"
-    //     )
-    // )]
-    // fn test_messages(#[case] json: &str, #[case] matcher: fn(LibTestMessage) -> bool) {
-    //     let msg: LibTestMessage = serde_json::from_str(json).expect("Failed to deserialize");
-    //     assert!(matcher(msg));
-    // }
-
-    // #[rstest]
-    // #[case::basic(
-    //     r#"{"type":"bench","name":"bench_example","median":1234,"deviation":56}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Bench(BenchMessage {
-    //             name: ref n,
-    //             median: 1234,
-    //             deviation: 56,
-    //             mib_per_second: None,
-    //         }) if n == "bench_example"
-    //     )
-    // )]
-    // #[case::with_throughput(
-    //     r#"{"type":"bench","name":"bench_throughput","median":5000,"deviation":100,"mib_per_second":250}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Bench(BenchMessage {
-    //             name: ref n,
-    //             median: 5000,
-    //             deviation: 100,
-    //             mib_per_second: Some(250),
-    //         }) if n == "bench_throughput"
-    //     )
-    // )]
-    // fn bench_messages(#[case] json: &str, #[case] matcher: fn(LibTestMessage) -> bool) {
-    //     let msg: LibTestMessage = serde_json::from_str(json).expect("Failed to deserialize");
-    //     assert!(matcher(msg));
-    // }
-
-    // #[rstest]
-    // #[case(
-    //     r#"{"type":"report","total_time":10.5,"compilation_time":8.2}"#,
-    //     |msg: LibTestMessage| matches!(
-    //         msg,
-    //         LibTestMessage::Report(ReportMessage {
-    //             total_time: 10.5,
-    //             compilation_time: 8.2,
-    //         })
-    //     )
-    // )]
-    // fn report_messages(#[case] json: &str, #[case] matcher: fn(LibTestMessage) -> bool) {
-    //     let msg: LibTestMessage = serde_json::from_str(json).expect("Failed to deserialize");
-    //     assert!(matcher(msg));
-    // }
+    platform_format!(format_github, crate::ci::GitHub);
 }

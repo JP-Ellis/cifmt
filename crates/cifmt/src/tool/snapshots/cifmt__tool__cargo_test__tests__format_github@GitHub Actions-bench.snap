@@ -2,5 +2,4 @@
 source: crates/cifmt/src/tool/cargo_test.rs
 expression: formatted
 ---
-::endgroup::
-::error title=Test Timeout::test_slow
+::notice title=Benchmark Result::bench_example: 1234 ns/iter (± 56)

@@ -1,5 +1,0 @@
----
-source: crates/cifmt/src/tool/cargo_test.rs
-expression: formatted
----
-::error title=Test Suite Failed::2 failed, 8 passed, 1 ignored, 0 measured, 0 filtered out in 1.23s

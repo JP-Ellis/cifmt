@@ -123,8 +123,7 @@ impl CiMessage for SuiteMessage {
                 let mut parts = Vec::new();
 
                 parts.push(GitHub::endgroup());
-                parts.push(GitHub::notice()
-                .message(&format!(
+                parts.push(GitHub::notice(&format!(
                     "Discovered {total} items: {tests} tests, {benchmarks} benchmarks, {ignored} ignored"
                 ))
                 .title("Test Discovery")
@@ -139,8 +138,7 @@ impl CiMessage for SuiteMessage {
             } => {
                 // We don't start a group here because the individual tests will
                 // create their own groups.
-                GitHub::notice()
-                    .message(&format!("Running {test_count} tests"))
+                GitHub::notice(&format!("Running {test_count} tests"))
                     .title("Test Suite Started")
                     .format()
             }
@@ -156,8 +154,7 @@ impl CiMessage for SuiteMessage {
                 let time_info = exec_time
                     .map(|t| format!(" in {:.2}s", t))
                     .unwrap_or_default();
-                GitHub::error()
-                    .message(&format!(
+                GitHub::error(&format!(
                         "{failed} failed, {passed} passed, {ignored} ignored, {measured} measured, {filtered_out} filtered out{time_info}"
                     ))
                     .title("Test Suite Failed")
@@ -175,8 +172,7 @@ impl CiMessage for SuiteMessage {
                 let time_info = exec_time
                     .map(|t| format!(" in {:.2}s", t))
                     .unwrap_or_default();
-                GitHub::notice()
-                    .message(&format!(
+                GitHub::notice(&format!(
                         "{passed} passed, {failed} failed, {ignored} ignored, {measured} measured, {filtered_out} filtered out{time_info}"
                     ))
                     .title("Test Suite Passed")
@@ -275,11 +271,11 @@ impl CiMessage for TestMessage {
                 start_col,
                 end_line,
                 end_col,
-            } => GitHub::debug(&format!(
+            } => GitHub::debug(format!(
                 "Discovered test: {name} (ignored: {ignore}, message: {ignore_message:?}, location: {source_path}:{start_line}:{start_col}-{end_line}:{end_col})",
             )),
 
-            Self::Started { name } => GitHub::group(&format!("Test: {name}")),
+            Self::Started { name } => GitHub::group(format!("Test: {name}")),
 
             Self::Ok {
                 name,
@@ -293,14 +289,13 @@ impl CiMessage for TestMessage {
                 }
 
                 parts.push(
-                    GitHub::notice()
-                        .message(
-                            &exec_time
-                                .map(|t| format!("Executed in {:.2}s", t))
-                                .unwrap_or_default(),
-                        )
-                        .title(&format!("Test Passed: {name}"))
-                        .format(),
+                    GitHub::notice(
+                        &exec_time
+                            .map(|t| format!("Executed in {:.2}s", t))
+                            .unwrap_or_default(),
+                    )
+                    .title(&format!("Test Passed: {name}"))
+                    .format(),
                 );
 
                 parts.push(GitHub::endgroup());
@@ -327,8 +322,7 @@ impl CiMessage for TestMessage {
                     .unwrap_or_default();
 
                 parts.push(
-                    GitHub::notice()
-                        .message(message.as_deref().unwrap_or_default())
+                    GitHub::notice(message.as_deref().unwrap_or_default())
                         .title(&format!("Test Failed: {name}{time_info}"))
                         .format(),
                 );
@@ -338,20 +332,19 @@ impl CiMessage for TestMessage {
 
             Self::Timeout { name } => [
                 GitHub::endgroup(),
-                GitHub::error().message(name).title("Test Timeout").format(),
+                GitHub::error(name).title("Test Timeout").format(),
             ]
             .join(""),
 
-            Self::Ignored { name, message } => GitHub::notice()
-                .message(
-                    &message
-                        .as_deref()
-                        .filter(|s| s.is_empty())
-                        .map(|s| s.replace('\n', " "))
-                        .unwrap_or_default(),
-                )
-                .title(&format!("Test Ignored: {name}"))
-                .format(),
+            Self::Ignored { name, message } => GitHub::notice(
+                &message
+                    .as_deref()
+                    .filter(|s| s.is_empty())
+                    .map(|s| s.replace('\n', " "))
+                    .unwrap_or_default(),
+            )
+            .title(&format!("Test Ignored: {name}"))
+            .format(),
         }
     }
 }
@@ -378,13 +371,12 @@ impl CiMessage for BenchMessage {
             .mib_per_second
             .map(|mb| format!(" ({} MiB/s)", mb))
             .unwrap_or_default();
-        GitHub::notice()
-            .message(&format!(
-                "{}: {} ns/iter (± {}){}",
-                self.name, self.median, self.deviation, throughput
-            ))
-            .title("Benchmark Result")
-            .format()
+        GitHub::notice(&format!(
+            "{}: {} ns/iter (± {}){}",
+            self.name, self.median, self.deviation, throughput
+        ))
+        .title("Benchmark Result")
+        .format()
     }
 }
 
@@ -401,13 +393,12 @@ impl CiMessage for ReportMessage {
     type Platform = GitHub;
 
     fn format(&self) -> String {
-        GitHub::notice()
-            .message(&format!(
-                "Total: {:.2}s, Compilation: {:.2}s",
-                self.total_time, self.compilation_time
-            ))
-            .title("Doctest Report")
-            .format()
+        GitHub::notice(&format!(
+            "Total: {:.2}s, Compilation: {:.2}s",
+            self.total_time, self.compilation_time
+        ))
+        .title("Doctest Report")
+        .format()
     }
 }
 

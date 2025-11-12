@@ -6,10 +6,12 @@
 
 mod github;
 
+use core::fmt;
+
 pub use crate::ci::github::GitHub;
 
 /// Platform trait.
-pub trait Platform {
+pub trait Platform: fmt::Display {
     /// Infer the CI platform from environment variables.
     ///
     /// Returns `Some(Self)` if the current environment matches this platform,

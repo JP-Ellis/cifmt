@@ -26,7 +26,7 @@
 ///        Self::Platform::notice(&self.text)
 ///            .file(&self.file)
 ///            .line(self.line)
-///            .format();
+///            .format()
 ///     }
 /// }
 /// ```

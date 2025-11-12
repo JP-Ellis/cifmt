@@ -1,6 +1,0 @@
----
-source: crates/cifmt/src/tool/cargo_test.rs
-expression: formatted
----
-::notice title=Test Passed: my_test::should_work::Executed in 0.00s
-::endgroup::

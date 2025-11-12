@@ -2,4 +2,5 @@
 source: crates/cifmt/src/tool/cargo_test.rs
 expression: formatted
 ---
-::notice title=Doctest Report::Total: 3.50s, Compilation: 2.10s
+::endgroup::
+::error title=Test Timeout::test_hanging

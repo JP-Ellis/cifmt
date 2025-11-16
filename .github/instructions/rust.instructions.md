@@ -73,10 +73,10 @@ These instructions are based on [The Rust Book](https://doc.rust-lang.org/book/)
 
 ### Common Traits Implementation
 
-Eagerly implement common traits where appropriate:
-
--   `Copy`, `Clone`, `Eq`, `PartialEq`, `Ord`, `PartialOrd`, `Hash`, `Debug`, `Display`, `Default`
--   Use standard conversion traits: `From`, `AsRef`, `AsMut`
+-   Always implement `Debug`.
+-   Always implement `Display` for user-facing types.
+-   Common traits should be only implemented when required, or when it makes sense: `Copy`, `Clone`, `Eq`, `PartialEq`, `Ord`, `PartialOrd`, `Hash`, `Default`
+-   Prefer standard conversion traits (`From`, `AsRef`, `AsMut`) over custom conversion methods
 -   Collections should implement `FromIterator` and `Extend`
 -   Note: `Send` and `Sync` are auto-implemented by the compiler when safe; avoid manual implementation unless using `unsafe` code
 

@@ -8,6 +8,8 @@ mod github;
 
 use core::fmt;
 
+use tracing::debug;
+
 pub use crate::ci::github::GitHub;
 
 /// Platform trait.
@@ -22,6 +24,7 @@ pub trait Platform: fmt::Display {
 }
 
 pub fn from_env() -> Box<dyn Platform> {
+    debug!("Detecting CI platform from environment variables");
     if let Some(env) = GitHub::from_env() {
         Box::new(env)
     } else {

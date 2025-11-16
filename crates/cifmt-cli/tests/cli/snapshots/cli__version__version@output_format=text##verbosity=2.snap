@@ -1,0 +1,11 @@
+---
+source: crates/cifmt-cli/tests/cli/version.rs
+expression: "cmd.arg(\"--output-format\").arg(output_format).args(iter::repeat_n(\"-v\",\nverbosity))"
+---
+Success: true
+Exit Code: 0
+--- STDOUT ---
+[VERSION] ([HASH] [DATE])
+
+--- STDERR ---
+[RUN_TIME] DEBUG cifmt::logging: 52 Tracing initialized with verbosity level 2

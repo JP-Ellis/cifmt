@@ -19,6 +19,6 @@ serde_json = { workspace = true }
 tracing    = { workspace = true }
 
 [dev-dependencies]
-insta             = "=1.43.2"
+insta             = { workspace = true }
 pretty_assertions = { workspace = true }
 rstest            = { workspace = true }

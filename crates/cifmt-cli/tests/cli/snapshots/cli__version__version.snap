@@ -1,0 +1,10 @@
+---
+source: crates/cifmt-cli/tests/cli/version.rs
+expression: "TestCommand::default().arg(\"version\")"
+---
+Success: true
+Exit Code: 0
+--- STDOUT ---
+[VERSION] ([HASH] [DATE])
+
+--- STDERR ---

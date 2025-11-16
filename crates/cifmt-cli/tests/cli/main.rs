@@ -20,6 +20,11 @@ const DEFAULT_FILTERS: &[(&str, &str)] = &[
         "[VERSION] ([HASH] [DATE])",
     ),
     (r"\d+\.\d+\.\d+(\.dev\d+)?", "[VERSION]"),
+    // Debug logging with timestamps
+    (
+        r"\x1b\[\d+m\s*\d+\.\d{9}s\x1b\[0m \x1b\[\d+m([A-Z]+)\x1b\[0m \x1b\[\d+m([\w:]+)\x1b\[0m\x1b\[\d+m:\x1b\[0m \x1b\[\d+m(\d+):\x1b\[0m",
+        "[RUN_TIME] $1 $2: $3",
+    ),
 ];
 /// A test context for CLI tests
 ///
@@ -34,13 +39,13 @@ pub struct TestCommand {
 
 impl TestCommand {
     /// Push a new argument to the command
-    pub fn arg(&mut self, arg: impl Into<String>) -> &mut Self {
+    pub fn arg(mut self, arg: impl Into<String>) -> Self {
         self.args.push(arg.into());
         self
     }
 
     /// Push multiple arguments to the command
-    pub fn args<I, S>(&mut self, args: I) -> &mut Self
+    pub fn args<I, S>(mut self, args: I) -> Self
     where
         I: IntoIterator<Item = S>,
         S: Into<String>,
@@ -50,13 +55,13 @@ impl TestCommand {
     }
 
     /// Set an environment variable for the command
-    pub fn env(&mut self, key: impl Into<String>, value: impl Into<String>) -> &mut Self {
+    pub fn env(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         self.env.push((key.into(), value.into()));
         self
     }
 
     /// Set multiple environment variables for the command
-    pub fn envs<I, K, V>(&mut self, envs: I) -> &mut Self
+    pub fn envs<I, K, V>(mut self, envs: I) -> Self
     where
         I: IntoIterator<Item = (K, V)>,
         K: Into<String>,
@@ -68,17 +73,13 @@ impl TestCommand {
     }
 
     /// Add an insta filter to the command
-    pub fn filter(
-        &mut self,
-        pattern: impl Into<String>,
-        replacement: impl Into<String>,
-    ) -> &mut Self {
+    pub fn filter(mut self, pattern: impl Into<String>, replacement: impl Into<String>) -> Self {
         self.filters.push((pattern.into(), replacement.into()));
         self
     }
 
     /// Add multiple insta filters to the command
-    pub fn filters<I, P, R>(&mut self, filters: I) -> &mut Self
+    pub fn filters<I, P, R>(mut self, filters: I) -> Self
     where
         I: IntoIterator<Item = (P, R)>,
         P: Into<String>,
@@ -151,3 +152,27 @@ impl fmt::Display for TestCommand {
         write!(f, "{}", self.run_and_format())
     }
 }
+
+/// Adjust snapshot names based on variable names and values.
+macro_rules! set_snapshot_suffix {
+    ($($expr:expr),+ $(,)?) => {
+        let mut settings = ::insta::Settings::clone_current();
+        settings.set_snapshot_suffix(
+            format!(
+                concat!("" $(, stringify!($expr), "={}",)"##"*),
+                $($expr),*
+            )
+        );
+        let _guard = settings.bind_to_scope();
+    }
+}
+
+/// Re-export the macros
+///
+/// See: <https://stackoverflow.com/a/31749071/3549270>
+#[allow(
+    clippy::allow_attributes,
+    unused_imports,
+    reason = "Re-exporting the macro"
+)]
+pub(crate) use set_snapshot_suffix;

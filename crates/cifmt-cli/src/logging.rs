@@ -27,7 +27,10 @@ pub(crate) fn setup_tracing(verbosity: u8) {
         _ => EnvFilter::new("debug"),
     };
 
-    let fmt_layer = fmt::layer().with_target(true).with_line_number(true);
+    let fmt_layer = fmt::layer()
+        .with_target(true)
+        .with_line_number(true)
+        .with_writer(std::io::stderr);
 
     // For -vv and above, enable detailed timing information
     if verbosity >= 2 {

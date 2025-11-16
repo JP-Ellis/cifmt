@@ -5,6 +5,7 @@
 
 use bon::bon;
 use core::fmt;
+use tracing::debug;
 
 use crate::ci::Platform;
 
@@ -24,6 +25,7 @@ impl Platform for GitHub {
         Self: Sized,
     {
         if std::env::var("GITHUB_ACTIONS").is_ok() {
+            debug!("Detected GitHub Actions environment");
             Some(GitHub)
         } else {
             None

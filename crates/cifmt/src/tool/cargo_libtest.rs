@@ -284,7 +284,7 @@ impl CiMessage for TestMessage {
             } => {
                 let mut parts = Vec::with_capacity(3);
 
-                if let Some(stdout) = stdout.as_ref().filter(|s| s.is_empty()) {
+                if let Some(stdout) = stdout.as_ref().filter(|s| !s.is_empty()) {
                     parts.push(stdout.clone() + "\n");
                 }
 
@@ -311,7 +311,7 @@ impl CiMessage for TestMessage {
             } => {
                 let mut parts = Vec::with_capacity(3);
 
-                if let Some(stdout) = stdout.as_ref().filter(|s| s.is_empty()) {
+                if let Some(stdout) = stdout.as_ref().filter(|s| !s.is_empty()) {
                     parts.push(stdout.clone() + "\n");
                 }
 
@@ -339,7 +339,7 @@ impl CiMessage for TestMessage {
             Self::Ignored { name, message } => GitHub::notice(
                 &message
                     .as_deref()
-                    .filter(|s| s.is_empty())
+                    .filter(|s| !s.is_empty())
                     .map(|s| s.replace('\n', " "))
                     .unwrap_or_default(),
             )
@@ -404,25 +404,25 @@ impl CiMessage for ReportMessage {
 
 /// Tool implementation for parsing cargo test (libtest) JSON output.
 #[derive(Debug, Clone, Default)]
-pub struct CargoTest {
+pub struct CargoLibtest {
     /// Buffer for incomplete JSON lines.
     buffer: Vec<u8>,
 }
 
-impl CargoTest {
-    /// Creates a new CargoTest parser.
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
+impl crate::tool::ToolDetect for CargoLibtest {
+    type Tool = Self;
 
-impl crate::tool::Tool for CargoTest {
-    const TOOL_NAME: &'static str = "cargo-test";
-
-    type Message = LibTestMessage;
-    type Error = serde_json::Error;
-
-    fn detect(&self, sample: &[u8]) -> Option<Self> {
+    /// Detect if the given sample matches the cargo libtest format.
+    ///
+    /// # Arguments
+    ///
+    /// * `sample` - A byte slice containing a sample of the tool's output.
+    ///
+    /// # Returns
+    ///
+    /// If detection is successful, returns `Some(Self)`, otherwise returns
+    /// `None`.
+    fn detect(sample: &[u8]) -> Option<Self> {
         // Try to parse a few lines and check if they match libtest JSON format
         let sample_str = std::str::from_utf8(sample).ok()?;
 
@@ -432,7 +432,7 @@ impl crate::tool::Tool for CargoTest {
                 if let Some(msg_type) = value.get("type").and_then(|v| v.as_str()) {
                     match msg_type {
                         "suite" | "test" | "bench" | "report" => {
-                            return Some(Self::new());
+                            return Some(Self::default());
                         }
                         _ => continue,
                     }
@@ -441,6 +441,15 @@ impl crate::tool::Tool for CargoTest {
         }
 
         None
+    }
+}
+
+impl crate::tool::Tool for CargoLibtest {
+    type Message = LibTestMessage;
+    type Error = serde_json::Error;
+
+    fn name(&self) -> &'static str {
+        "cargo-libtest"
     }
 
     fn parse(&mut self, buf: &[u8]) -> Vec<Result<Self::Message, Self::Error>> {
@@ -483,7 +492,7 @@ mod tests {
     use rstest::rstest;
 
     use crate::message::CiMessage;
-    use crate::tool::cargo_test::{LibTestMessage, SuiteMessage};
+    use crate::tool::cargo_libtest::{LibTestMessage, SuiteMessage};
 
     macro_rules! set_snapshot_suffix {
         ($($expr:expr),*) => {
@@ -538,7 +547,7 @@ mod tests {
     )]
     #[case::test_discovered(
         r#"{"type":"test","event":"discovered","name":"test_example","ignore":false,"source_path":"src/lib.rs","start_line":10,"start_col":4,"end_line":15,"end_col":5}"#,
-        LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Discovered {
+        LibTestMessage::Test(crate::tool::cargo_libtest::TestMessage::Discovered {
             name: "test_example".to_string(),
             ignore: false,
             ignore_message: None,
@@ -551,13 +560,13 @@ mod tests {
     )]
     #[case::test_started(
         r#"{"type":"test","event":"started","name":"test_example"}"#,
-        LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Started {
+        LibTestMessage::Test(crate::tool::cargo_libtest::TestMessage::Started {
             name: "test_example".to_string(),
         })
     )]
     #[case::test_ok(
         r#"{"type":"test","event":"ok","name":"test_example","exec_time":0.001}"#,
-        LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Ok {
+        LibTestMessage::Test(crate::tool::cargo_libtest::TestMessage::Ok {
             name: "test_example".to_string(),
             exec_time: Some(0.001),
             stdout: None,
@@ -565,7 +574,7 @@ mod tests {
     )]
     #[case::test_failed(
         r#"{"type":"test","event":"failed","name":"test_failing","exec_time":0.003,"message":"assertion failed"}"#,
-        LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Failed {
+        LibTestMessage::Test(crate::tool::cargo_libtest::TestMessage::Failed {
             name: "test_failing".to_string(),
             exec_time: Some(0.003),
             stdout: None,
@@ -574,20 +583,20 @@ mod tests {
     )]
     #[case::test_timeout(
         r#"{"type":"test","event":"timeout","name":"test_hanging"}"#,
-        LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Timeout {
+        LibTestMessage::Test(crate::tool::cargo_libtest::TestMessage::Timeout {
             name: "test_hanging".to_string(),
         })
     )]
     #[case::test_ignored(
         r#"{"type":"test","event":"ignored","name":"test_ignored"}"#,
-        LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Ignored {
+        LibTestMessage::Test(crate::tool::cargo_libtest::TestMessage::Ignored {
             name: "test_ignored".to_string(),
             message: None,
         })
     )]
     #[case::bench(
         r#"{"type":"bench","name":"bench_example","median":1234,"deviation":56}"#,
-        LibTestMessage::Bench(crate::tool::cargo_test::BenchMessage {
+        LibTestMessage::Bench(crate::tool::cargo_libtest::BenchMessage {
             name: "bench_example".to_string(),
             median: 1234,
             deviation: 56,
@@ -596,7 +605,7 @@ mod tests {
     )]
     #[case::report(
         r#"{"type":"report","total_time":10.5,"compilation_time":8.2}"#,
-        LibTestMessage::Report(crate::tool::cargo_test::ReportMessage {
+        LibTestMessage::Report(crate::tool::cargo_libtest::ReportMessage {
             total_time: 10.5,
             compilation_time: 8.2,
         })
@@ -644,7 +653,7 @@ mod tests {
                 }),
                 "suite_failed"
             )]
-            #[case(LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Discovered {
+            #[case(LibTestMessage::Test(crate::tool::cargo_libtest::TestMessage::Discovered {
                     name: "test_example".to_string(),
                     ignore: false,
                     ignore_message: None,
@@ -657,13 +666,13 @@ mod tests {
                 "test_discovered"
             )]
             #[case(
-                            LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Started {
+                            LibTestMessage::Test(crate::tool::cargo_libtest::TestMessage::Started {
                                 name: "test_example".to_string(),
                             }),
                             "test_started"
                         )]
             #[case(
-                            LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Ok {
+                            LibTestMessage::Test(crate::tool::cargo_libtest::TestMessage::Ok {
                                 name: "test_example".to_string(),
                                 exec_time: Some(0.001),
                                 stdout: None,
@@ -671,7 +680,7 @@ mod tests {
                             "test_ok"
                         )]
             #[case(
-                            LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Failed {
+                            LibTestMessage::Test(crate::tool::cargo_libtest::TestMessage::Failed {
                                 name: "test_failing".to_string(),
                                 exec_time: Some(0.003),
                                 stdout: None,
@@ -680,20 +689,20 @@ mod tests {
                             "test_failed"
                         )]
             #[case(
-                            LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Timeout {
+                            LibTestMessage::Test(crate::tool::cargo_libtest::TestMessage::Timeout {
                                 name: "test_hanging".to_string(),
                             }),
                             "test_timeout"
                         )]
             #[case(
-                            LibTestMessage::Test(crate::tool::cargo_test::TestMessage::Ignored {
+                            LibTestMessage::Test(crate::tool::cargo_libtest::TestMessage::Ignored {
                                 name: "test_ignored".to_string(),
                                 message: None,
                             }),
                             "test_ignored"
                         )]
             #[case(
-                            LibTestMessage::Bench(crate::tool::cargo_test::BenchMessage {
+                            LibTestMessage::Bench(crate::tool::cargo_libtest::BenchMessage {
                                 name: "bench_example".to_string(),
                                 median: 1234,
                                 deviation: 56,
@@ -702,7 +711,7 @@ mod tests {
                             "bench"
                         )]
             #[case(
-                            LibTestMessage::Report(crate::tool::cargo_test::ReportMessage {
+                            LibTestMessage::Report(crate::tool::cargo_libtest::ReportMessage {
                                 total_time: 10.5,
                                 compilation_time: 8.2,
                             }),

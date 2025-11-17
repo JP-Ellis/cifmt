@@ -4,13 +4,34 @@
 //! structured messages (typically JSON). Each submodule defines the message
 //! formats for that tool and implements conversion to CI messages.
 
-pub mod cargo_test;
+use thiserror::Error;
 
-// Placeholder for future tool support
-// pub mod mypy;
-// pub mod pytest;
-// pub mod eslint;
-// pub mod clippy;
+pub mod cargo_libtest;
+
+/// Trait for tool detection.
+///
+/// This trait defines a method for detecting if a given buffer of input
+/// corresponds to the tool's output format. If the tool is detected, it
+/// returns an instance of the tool.
+pub trait ToolDetect {
+    /// The tool type associated with this detection.
+    ///
+    /// In most cases, this will be the implementor type itself.
+    type Tool: Tool;
+
+    /// Detect if the given buffer corresponds to this tool's output format.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - A sample of the input data.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Some(tool_instance)` if detection succeeds, otherwise `None`.
+    fn detect(buffer: &[u8]) -> Option<Self::Tool>
+    where
+        Self: Sized;
+}
 
 /// Trait for tool.
 ///
@@ -22,22 +43,19 @@ pub mod cargo_test;
 /// This trait defines capabilities for detecting, reading, and parsing messages
 /// from a specific tool.
 pub trait Tool {
-    /// The tool name.
-    const TOOL_NAME: &'static str;
-
+    /// The message type produced by this tool.
+    ///
+    /// If the tool supports multiple message formats, this can be an enum
+    /// encapsulating all supported formats; otherwise, it can be a single
+    /// message type.
+    ///
+    /// It must implement the `CiMessage` trait to allow conversion to CI
+    /// messages.
     type Message: crate::message::CiMessage;
     type Error: std::error::Error;
 
-    /// Infer the tool from a sample of its output.
-    ///
-    /// Returns `Some(Self)` if the sample matches this tool, otherwise returns
-    /// `None`.
-    ///
-    /// Implementations may use heuristics such as checking for specific JSON
-    /// keys, patterns, or other identifiable markers in the sample.
-    fn detect(&self, sample: &[u8]) -> Option<Self>
-    where
-        Self: Sized;
+    /// Get the tool name as a string.
+    fn name(&self) -> &'static str;
 
     /// Parse messages from the tool's output.
     ///
@@ -60,4 +78,19 @@ pub trait Tool {
     /// A vector of results, each being either a successfully parsed message or
     /// an error if parsing failed for that message.
     fn parse(&mut self, buf: &[u8]) -> Vec<Result<Self::Message, Self::Error>>;
+}
+
+#[derive(Debug, Error)]
+pub enum ToolError {
+    #[error("No tool format detected")]
+    NoToolDetected,
+}
+
+pub fn detect<M, E>(buffer: &[u8]) -> Result<cargo_libtest::CargoLibtest, ToolError> {
+    if let Some(tool) = cargo_libtest::CargoLibtest::detect(buffer) {
+        tracing::info!("Detected tool format: {}", tool.name());
+        return Ok(tool);
+    }
+
+    Err(ToolError::NoToolDetected)
 }

@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_libtest.rs
+expression: formatted
+---
+REPORT: Total: 10.50s, Compilation: 8.20s

@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_libtest.rs
+expression: formatted
+---
+SUITE: Test Suite Failed - 2 failed, 38 passed, 2 ignored, 0 measured, 5 filtered out in 1.57s

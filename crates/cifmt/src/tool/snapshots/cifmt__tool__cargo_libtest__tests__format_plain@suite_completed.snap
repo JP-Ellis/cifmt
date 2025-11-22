@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_libtest.rs
+expression: formatted
+---
+SUITE: Test Discovery Completed - Discovered 47 items: 42 tests, 5 benchmarks, 3 ignored

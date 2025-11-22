@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_libtest.rs
+expression: formatted
+---
+TEST IGNORED: test_ignored

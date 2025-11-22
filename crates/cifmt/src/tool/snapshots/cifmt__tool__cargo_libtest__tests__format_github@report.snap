@@ -1,5 +1,5 @@
 ---
-source: crates/cifmt/src/tool/cargo_test.rs
+source: crates/cifmt/src/tool/cargo_libtest.rs
 expression: formatted
 ---
 ::notice title=Doctest Report::Total: 10.50s, Compilation: 8.20s

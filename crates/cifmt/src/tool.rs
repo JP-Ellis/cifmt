@@ -6,32 +6,10 @@
 
 use thiserror::Error;
 
+use crate::ci::Platform;
+
+// pub mod cargo_check;
 pub mod cargo_libtest;
-
-/// Trait for tool detection.
-///
-/// This trait defines a method for detecting if a given buffer of input
-/// corresponds to the tool's output format. If the tool is detected, it
-/// returns an instance of the tool.
-pub trait ToolDetect {
-    /// The tool type associated with this detection.
-    ///
-    /// In most cases, this will be the implementor type itself.
-    type Tool: Tool;
-
-    /// Detect if the given buffer corresponds to this tool's output format.
-    ///
-    /// # Arguments
-    ///
-    /// * `buffer` - A sample of the input data.
-    ///
-    /// # Returns
-    ///
-    /// Returns `Some(tool_instance)` if detection succeeds, otherwise `None`.
-    fn detect(buffer: &[u8]) -> Option<Self::Tool>
-    where
-        Self: Sized;
-}
 
 /// Trait for tool.
 ///
@@ -42,7 +20,7 @@ pub trait ToolDetect {
 ///
 /// This trait defines capabilities for detecting, reading, and parsing messages
 /// from a specific tool.
-pub trait Tool {
+pub trait Tool<P: crate::ci::Platform> {
     /// The message type produced by this tool.
     ///
     /// If the tool supports multiple message formats, this can be an enum
@@ -51,11 +29,23 @@ pub trait Tool {
     ///
     /// It must implement the `CiMessage` trait to allow conversion to CI
     /// messages.
-    type Message: crate::message::CiMessage;
+    type Message: crate::message::CiMessage<P>;
     type Error: std::error::Error;
 
     /// Get the tool name as a string.
     fn name(&self) -> &'static str;
+
+    /// Detect if the given sample matches this tool's format.
+    ///
+    /// # Arguments
+    ///
+    /// * `sample` - A byte slice containing a sample of the tool's output. This
+    ///   should typically contain a few lines of output to allow for detection.
+    ///
+    /// # Returns
+    ///
+    /// If detection is successful, returns `true`, otherwise returns `false`.
+    fn detect(sample: &[u8]) -> bool;
 
     /// Parse messages from the tool's output.
     ///
@@ -86,10 +76,35 @@ pub enum ToolError {
     NoToolDetected,
 }
 
-pub fn detect<M, E>(buffer: &[u8]) -> Result<cargo_libtest::CargoLibtest, ToolError> {
-    if let Some(tool) = cargo_libtest::CargoLibtest::detect(buffer) {
+/// Detect which tool format is present in the buffer.
+///
+/// # Arguments
+///
+/// * `sample` - A byte slice containing a sample of the tool's output. This
+///   should typically contain a few lines of output to allow for detection.
+///
+/// # Returns
+///
+/// Returns the detected tool if successful, otherwise returns an error.
+///
+/// # Errors
+///
+/// Returns `ToolError::NoToolDetected` if no known tool format is detected.
+pub fn detect<P: Platform>(buffer: &[u8]) -> Result<Box<dyn std::any::Any>, ToolError>
+where
+    // cargo_check::CargoCheck: Tool<P>,
+    cargo_libtest::CargoLibtest: Tool<P>,
+{
+    // if cargo_check::CargoCheck::detect(buffer) {
+    //     let tool = cargo_check::CargoCheck::default();
+    //     tracing::info!("Detected tool format: {}", tool.name());
+    //     return Ok(Box::new(tool));
+    // }
+
+    if cargo_libtest::CargoLibtest::detect(buffer) {
+        let tool = cargo_libtest::CargoLibtest::default();
         tracing::info!("Detected tool format: {}", tool.name());
-        return Ok(tool);
+        return Ok(Box::new(tool));
     }
 
     Err(ToolError::NoToolDetected)

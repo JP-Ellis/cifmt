@@ -3,6 +3,8 @@
 //! This module defines the fundamental types and traits for working with
 //! messages from different tools and formatting them for CI platforms.
 
+use crate::ci::Platform;
+
 /// Trait for types that can be formatted as CI messages.
 ///
 /// This trait allows different message types to be formatted for specific
@@ -19,9 +21,7 @@
 ///     line: u32
 /// }
 ///
-/// impl CiMessage for MyMessage {
-///     type Platform = GitHub;
-///
+/// impl CiMessage<GitHub> for MyMessage {
 ///     fn format(&self) -> String {
 ///        Self::Platform::notice(&self.text)
 ///            .file(&self.file)
@@ -30,10 +30,7 @@
 ///     }
 /// }
 /// ```
-pub trait CiMessage {
-    /// The platform type this message is associated with.
-    type Platform;
-
+pub trait CiMessage<T: Platform> {
     /// Formats this message for output.
     ///
     /// # Returns

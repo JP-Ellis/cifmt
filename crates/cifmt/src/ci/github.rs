@@ -455,7 +455,7 @@ impl GitHub {
 
 #[cfg(test)]
 mod tests {
-    use rstest::*;
+    use rstest::rstest;
 
     use crate::ci::GitHub;
     use crate::ci::Platform;
@@ -463,13 +463,19 @@ mod tests {
     #[rstest]
     fn debug() {
         let result = GitHub::debug("This is a debug message");
-        insta::assert_snapshot!(result, @"::debug::This is a debug message\n");
+        insta::assert_snapshot!(
+            result,
+            @"::debug::This is a debug message\n"
+        );
     }
 
     #[rstest]
     fn notice_simple() {
         let result = GitHub::notice("Build completed").format();
-        insta::assert_snapshot!(result, @"::notice ::Build completed\n");
+        insta::assert_snapshot!(
+            result,
+            @"::notice ::Build completed\n"
+        );
     }
 
     #[rstest]
@@ -482,13 +488,19 @@ mod tests {
             .end_column(20)
             .title("Test Title")
             .format();
-        insta::assert_snapshot!(result, @"::notice file=src/main.rs,line=42,col=10,endLine=45,endColumn=20,title=Test Title::Full annotation\n");
+        insta::assert_snapshot!(
+            result,
+            @"::notice file=src/main.rs,line=42,col=10,endLine=45,endColumn=20,title=Test Title::Full annotation\n"
+        );
     }
 
     #[rstest]
     fn warning_simple() {
         let result = GitHub::warning("Deprecated API").format();
-        insta::assert_snapshot!(result, @"::warning ::Deprecated API\n");
+        insta::assert_snapshot!(
+            result,
+            @"::warning ::Deprecated API\n"
+        );
     }
 
     #[rstest]
@@ -499,13 +511,19 @@ mod tests {
             .col(5)
             .title("Deprecation Warning")
             .format();
-        insta::assert_snapshot!(result, @"::warning file=src/main.rs,line=50,col=5,title=Deprecation Warning::This will be removed\n");
+        insta::assert_snapshot!(
+            result,
+            @"::warning file=src/main.rs,line=50,col=5,title=Deprecation Warning::This will be removed\n"
+        );
     }
 
     #[rstest]
     fn error_simple() {
         let result = GitHub::error("Build failed").format();
-        insta::assert_snapshot!(result, @"::error ::Build failed\n");
+        insta::assert_snapshot!(
+            result,
+            @"::error ::Build failed\n"
+        );
     }
 
     #[rstest]
@@ -518,49 +536,73 @@ mod tests {
             .end_column(15)
             .title("Syntax Error")
             .format();
-        insta::assert_snapshot!(result, @"::error file=src/main.rs,line=10,col=1,endLine=10,endColumn=15,title=Syntax Error::Unsupported syntax");
+        insta::assert_snapshot!(
+            result,
+            @"::error file=src/main.rs,line=10,col=1,endLine=10,endColumn=15,title=Syntax Error::Unsupported syntax"
+        );
     }
 
     #[rstest]
     fn group() {
         let result = GitHub::group("Build Steps");
-        insta::assert_snapshot!(result, @"::group::Build Steps\n");
+        insta::assert_snapshot!(
+            result,
+            @"::group::Build Steps\n"
+        );
     }
 
     #[rstest]
     fn endgroup() {
         let result = GitHub::endgroup();
-        insta::assert_snapshot!(result, @"::endgroup::\n");
+        insta::assert_snapshot!(
+            result,
+            @"::endgroup::\n"
+        );
     }
 
     #[rstest]
     fn add_mask() {
         let result = GitHub::add_mask("my-secret-token");
-        insta::assert_snapshot!(result, @"::add-mask::my-secret-token\n");
+        insta::assert_snapshot!(
+            result,
+            @"::add-mask::my-secret-token\n"
+        );
     }
 
     #[rstest]
     fn stop_commands() {
         let result = GitHub::stop_commands("pause-token-123");
-        insta::assert_snapshot!(result, @"::stop-commands::pause-token-123\n");
+        insta::assert_snapshot!(
+            result,
+            @"::stop-commands::pause-token-123\n"
+        );
     }
 
     #[rstest]
     fn resume_commands() {
         let result = GitHub::resume_commands("pause-token-123");
-        insta::assert_snapshot!(result, @"::pause-token-123::\n");
+        insta::assert_snapshot!(
+            result,
+            @"::pause-token-123::\n"
+        );
     }
 
     #[rstest]
     fn echo_enable() {
         let result = GitHub::echo(true);
-        insta::assert_snapshot!(result, @"::echo::on\n");
+        insta::assert_snapshot!(
+            result,
+            @"::echo::on\n"
+        );
     }
 
     #[rstest]
     fn echo_disable() {
         let result = GitHub::echo(false);
-        insta::assert_snapshot!(result, @"::echo::off\n");
+        insta::assert_snapshot!(
+            result,
+            @"::echo::off\n"
+        );
     }
 
     #[rstest]

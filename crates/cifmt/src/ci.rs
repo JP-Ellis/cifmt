@@ -5,12 +5,14 @@
 //! for representing the different CI platforms supported by this library.
 
 mod github;
+mod plain;
 
 use core::fmt;
 
 use tracing::debug;
 
-pub use crate::ci::github::GitHub;
+pub use github::GitHub;
+pub use plain::Plain;
 
 /// Platform trait.
 pub trait Platform: fmt::Display {

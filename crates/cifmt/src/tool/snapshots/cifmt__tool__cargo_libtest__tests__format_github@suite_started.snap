@@ -1,5 +1,5 @@
 ---
-source: crates/cifmt/src/tool/cargo_test.rs
+source: crates/cifmt/src/tool/cargo_libtest.rs
 expression: formatted
 ---
 ::notice title=Test Suite Started::Running 42 tests

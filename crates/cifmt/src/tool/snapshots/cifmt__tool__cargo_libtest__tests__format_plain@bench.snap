@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_libtest.rs
+expression: formatted
+---
+BENCH: bench_example: 1234 ns/iter (± 56)

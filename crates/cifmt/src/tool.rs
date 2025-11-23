@@ -6,34 +6,16 @@
 
 use thiserror::Error;
 
-use crate::ci::Platform;
+use crate::{ci::Platform, message::CiMessage};
 
-// pub mod cargo_check;
-pub mod cargo_libtest;
+mod cargo_check;
+mod cargo_libtest;
 
-/// Trait for tool.
-///
-/// We assume that each tool has a well-defined set of message formats that can
-/// be parsed and converted into CI messages. In many instances, this set may
-/// be a single message format, but support for multiple formats can be added
-/// by implementing this into the `Message` associated type.
-///
-/// This trait defines capabilities for detecting, reading, and parsing messages
-/// from a specific tool.
-pub trait Tool<P: crate::ci::Platform> {
-    /// The message type produced by this tool.
-    ///
-    /// If the tool supports multiple message formats, this can be an enum
-    /// encapsulating all supported formats; otherwise, it can be a single
-    /// message type.
-    ///
-    /// It must implement the `CiMessage` trait to allow conversion to CI
-    /// messages.
-    type Message: crate::message::CiMessage<P>;
-    type Error: std::error::Error;
+pub use cargo_check::CargoCheck;
+pub use cargo_libtest::CargoLibtest;
 
-    /// Get the tool name as a string.
-    fn name(&self) -> &'static str;
+pub trait ToolDetect {
+    type Tool: Tool;
 
     /// Detect if the given sample matches this tool's format.
     ///
@@ -44,8 +26,33 @@ pub trait Tool<P: crate::ci::Platform> {
     ///
     /// # Returns
     ///
-    /// If detection is successful, returns `true`, otherwise returns `false`.
-    fn detect(sample: &[u8]) -> bool;
+    /// The associated tool if detected, otherwise `None`.
+    fn detect(sample: &[u8]) -> Option<Self::Tool>;
+}
+
+/// Trait for tool.
+///
+/// We assume that each tool has a well-defined set of message formats that can
+/// be parsed and converted into CI messages. In many instances, this set may
+/// be a single message format, but support for multiple formats can be added
+/// by implementing this into the `Message` associated type.
+///
+/// This trait defines capabilities for detecting, reading, and parsing messages
+/// from a specific tool.
+pub trait Tool {
+    /// The message type produced by this tool.
+    ///
+    /// If the tool supports multiple message formats, this can be an enum
+    /// encapsulating all supported formats; otherwise, it can be a single
+    /// message type.
+    ///
+    /// It must implement the `CiMessage` trait to allow conversion to CI
+    /// messages.
+    type Message;
+    type Error: std::error::Error;
+
+    /// Get the tool name as a string.
+    fn name(&self) -> &'static str;
 
     /// Parse messages from the tool's output.
     ///
@@ -92,17 +99,15 @@ pub enum ToolError {
 /// Returns `ToolError::NoToolDetected` if no known tool format is detected.
 pub fn detect<P: Platform>(buffer: &[u8]) -> Result<Box<dyn std::any::Any>, ToolError>
 where
-    // cargo_check::CargoCheck: Tool<P>,
+    cargo_check::CargoCheck: Tool<P>,
     cargo_libtest::CargoLibtest: Tool<P>,
 {
-    // if cargo_check::CargoCheck::detect(buffer) {
-    //     let tool = cargo_check::CargoCheck::default();
-    //     tracing::info!("Detected tool format: {}", tool.name());
-    //     return Ok(Box::new(tool));
-    // }
+    if let Some(tool) = CargoCheck::detect(buffer) {
+        tracing::info!("Detected tool format: {}", tool.name());
+        return Ok(Box::new(tool));
+    }
 
-    if cargo_libtest::CargoLibtest::detect(buffer) {
-        let tool = cargo_libtest::CargoLibtest::default();
+    if let Some(tool) = CargoLibtest::detect(buffer) {
         tracing::info!("Detected tool format: {}", tool.name());
         return Ok(Box::new(tool));
     }

@@ -10,13 +10,18 @@ mod report_message;
 mod suite_message;
 mod test_message;
 
+use std::io::BufRead;
+
 pub use bench_message::BenchMessage;
 pub use report_message::ReportMessage;
 pub use suite_message::SuiteMessage;
 pub use test_message::TestMessage;
 
-use crate::ci::{GitHub, Plain};
-use crate::message::CiMessage;
+use crate::{
+    ci::{GitHub, Plain},
+    tool::Tool,
+};
+use crate::{message::CiMessage, tool::ToolDetect};
 use serde::Deserialize;
 
 /// A message from libtest's JSON formatter.
@@ -69,64 +74,32 @@ pub struct CargoLibtest {
     buffer: Vec<u8>,
 }
 
-impl crate::tool::Tool<Plain> for CargoLibtest {
-    type Message = LibTestMessage;
-    type Error = serde_json::Error;
+impl ToolDetect for CargoLibtest {
+    type Tool = Self;
+    fn detect(sample: &[u8]) -> Option<Self::Tool> {
+        let (oks, errs) = sample
+            .lines()
+            .map_while(Result::ok)
+            .map(|line| serde_json::from_str::<LibTestMessage>(&line))
+            .fold((0_u8, 0_u8), |(oks, errs), res| match res {
+                Ok(_) => (oks + 1, errs),
+                Err(_) => (oks, errs + 1),
+            });
 
-    fn name(&self) -> &'static str {
-        "cargo-libtest"
-    }
-
-    fn detect(sample: &[u8]) -> bool {
-        // Look for the presence of the "type" field in JSON lines
-        sample.windows(8).any(|window| window == b"\"type\":")
-    }
-
-    fn parse(&mut self, buf: &[u8]) -> Vec<Result<Self::Message, Self::Error>> {
-        let mut results = Vec::new();
-
-        // Append new data to buffer
-        self.buffer.extend_from_slice(buf);
-
-        // Process complete lines
-        while let Some(newline_pos) = self.buffer.iter().position(|&b| b == b'\n') {
-            // Extract line (excluding newline)
-            let line = self.buffer.drain(..=newline_pos).collect::<Vec<u8>>();
-            let line = &line[..line.len() - 1]; // Remove newline
-
-            // Skip empty lines
-            if line.is_empty() {
-                continue;
-            }
-
-            // Try to parse as JSON
-            match serde_json::from_slice::<LibTestMessage>(line) {
-                Ok(msg) => results.push(Ok(msg)),
-                Err(e) => {
-                    // Only report error if it looks like JSON (starts with '{')
-                    if line.first() == Some(&b'{') {
-                        results.push(Err(e));
-                    }
-                    // Otherwise skip non-JSON lines (like rust output)
-                }
-            }
+        if oks > errs {
+            Some(Self::default())
+        } else {
+            None
         }
-
-        results
     }
 }
 
-impl crate::tool::Tool<GitHub> for CargoLibtest {
+impl Tool for CargoLibtest {
     type Message = LibTestMessage;
     type Error = serde_json::Error;
 
     fn name(&self) -> &'static str {
         "cargo-libtest"
-    }
-
-    fn detect(sample: &[u8]) -> bool {
-        // Look for the presence of the "type" field in JSON lines
-        sample.windows(8).any(|window| window == b"\"type\":")
     }
 
     fn parse(&mut self, buf: &[u8]) -> Vec<Result<Self::Message, Self::Error>> {

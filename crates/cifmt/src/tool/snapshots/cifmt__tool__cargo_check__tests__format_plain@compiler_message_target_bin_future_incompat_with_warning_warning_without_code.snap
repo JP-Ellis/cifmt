@@ -1,0 +1,6 @@
+---
+source: crates/cifmt/src/tool/cargo_check.rs
+expression: formatted
+---
+Future incompatibility warnings detected:
+warning: unused import: `std::io` (warning)

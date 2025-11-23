@@ -8,9 +8,11 @@ use crate::ci::Platform;
 
 /// Plain text formatter.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct Plain;
 
 impl Platform for Plain {
+    #[inline]
     fn from_env() -> Option<Self>
     where
         Self: Sized,
@@ -20,6 +22,7 @@ impl Platform for Plain {
 }
 
 impl fmt::Display for Plain {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Plain Text Formatter")
     }

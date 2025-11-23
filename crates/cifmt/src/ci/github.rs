@@ -17,23 +17,24 @@ use crate::ci::Platform;
 /// For more information, see:
 /// <https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions>
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct GitHub;
 
 impl Platform for GitHub {
+    #[inline]
     fn from_env() -> Option<Self>
     where
         Self: Sized,
     {
-        if std::env::var("GITHUB_ACTIONS").is_ok() {
+        std::env::var("GITHUB_ACTIONS").is_ok().then(|| {
             debug!("Detected GitHub Actions environment");
-            Some(GitHub)
-        } else {
-            None
-        }
+            GitHub
+        })
     }
 }
 
 impl fmt::Display for GitHub {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "GitHub Actions")
     }
@@ -110,6 +111,7 @@ impl GitHub {
     ///
     /// let debug_message = GitHub::debug("This is a debug message.");
     /// ```
+    #[inline]
     pub fn debug(message: impl AsRef<str>) -> String {
         format!("::debug::{}\n", message.as_ref())
     }
@@ -309,6 +311,7 @@ impl GitHub {
     /// println!("Compiling...");
     /// print!("{}", GitHub::endgroup());
     /// ```
+    #[inline]
     pub fn group(title: impl AsRef<str>) -> String {
         format!("::group::{}\n", title.as_ref())
     }
@@ -329,8 +332,10 @@ impl GitHub {
     /// println!("Running tests...");
     /// print!("{}", GitHub::endgroup());
     /// ```
+    #[must_use]
+    #[inline]
     pub fn endgroup() -> String {
-        "::endgroup::\n".to_string()
+        "::endgroup::\n".to_owned()
     }
 
     /// Masks a value in the workflow logs.
@@ -357,6 +362,7 @@ impl GitHub {
     /// print!("{}", GitHub::add_mask(secret));
     /// println!("The secret is: {}", secret); // Will print: The secret is: ***
     /// ```
+    #[inline]
     pub fn add_mask(value: impl AsRef<str>) -> String {
         format!("::add-mask::{}\n", value.as_ref())
     }
@@ -387,6 +393,7 @@ impl GitHub {
     /// print!("{}", GitHub::resume_commands(token));
     /// println!("::warning:: This WILL be processed as a command");
     /// ```
+    #[inline]
     pub fn stop_commands(token: impl AsRef<str>) -> String {
         format!("::stop-commands::{}\n", token.as_ref())
     }
@@ -416,6 +423,7 @@ impl GitHub {
     /// println!("Commands are disabled here");
     /// print!("{}", GitHub::resume_commands(token));
     /// ```
+    #[inline]
     pub fn resume_commands(token: impl AsRef<str>) -> String {
         format!("::{}::\n", token.as_ref())
     }
@@ -447,6 +455,8 @@ impl GitHub {
     /// // Re-enable command echoing
     /// print!("{}", GitHub::echo(true));
     /// ```
+    #[must_use]
+    #[inline]
     pub fn echo(enable: bool) -> String {
         let value = if enable { "on" } else { "off" };
         format!("::echo::{value}\n")
@@ -454,7 +464,7 @@ impl GitHub {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use rstest::rstest;
 
     use crate::ci::GitHub;
@@ -607,11 +617,13 @@ mod tests {
 
     #[rstest]
     fn github_from_env_present() {
+        // SAFETY: Safe within a single-threaded test context
         unsafe {
             std::env::set_var("GITHUB_ACTIONS", "true");
         }
         let result = GitHub::from_env();
         assert!(result.is_some());
+        // SAFETY: Safe within a single-threaded test context
         unsafe {
             std::env::remove_var("GITHUB_ACTIONS");
         }
@@ -619,6 +631,7 @@ mod tests {
 
     #[rstest]
     fn github_from_env_absent() {
+        // SAFETY: Safe within a single-threaded test context
         unsafe {
             std::env::remove_var("GITHUB_ACTIONS");
         }

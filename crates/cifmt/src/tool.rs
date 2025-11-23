@@ -4,17 +4,17 @@
 //! structured messages (typically JSON). Each submodule defines the message
 //! formats for that tool and implements conversion to CI messages.
 
-use thiserror::Error;
-
-use crate::{ci::Platform, message::CiMessage};
+use crate::ci::Platform;
 
 mod cargo_check;
 mod cargo_libtest;
 
-pub use cargo_check::CargoCheck;
-pub use cargo_libtest::CargoLibtest;
+use cargo_check::CargoCheck;
+use cargo_libtest::CargoLibtest;
 
-pub trait ToolDetect {
+/// Trait for types that can detect a tool format from sample output.
+pub trait Detect {
+    /// The concrete tool type returned when this detector succeeds.
     type Tool: Tool;
 
     /// Detect if the given sample matches this tool's format.
@@ -49,6 +49,7 @@ pub trait Tool {
     /// It must implement the `CiMessage` trait to allow conversion to CI
     /// messages.
     type Message;
+    /// Error type returned by the parser for this tool.
     type Error: std::error::Error;
 
     /// Get the tool name as a string.
@@ -77,8 +78,11 @@ pub trait Tool {
     fn parse(&mut self, buf: &[u8]) -> Vec<Result<Self::Message, Self::Error>>;
 }
 
-#[derive(Debug, Error)]
-pub enum ToolError {
+/// Errors that can occur during tool detection.
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    /// No tool format detected in the provided buffer.
     #[error("No tool format detected")]
     NoToolDetected,
 }
@@ -97,11 +101,8 @@ pub enum ToolError {
 /// # Errors
 ///
 /// Returns `ToolError::NoToolDetected` if no known tool format is detected.
-pub fn detect<P: Platform>(buffer: &[u8]) -> Result<Box<dyn std::any::Any>, ToolError>
-where
-    cargo_check::CargoCheck: Tool<P>,
-    cargo_libtest::CargoLibtest: Tool<P>,
-{
+#[inline]
+pub fn detect<P: Platform>(buffer: &[u8]) -> Result<Box<dyn std::any::Any>, Error> {
     if let Some(tool) = CargoCheck::detect(buffer) {
         tracing::info!("Detected tool format: {}", tool.name());
         return Ok(Box::new(tool));
@@ -112,5 +113,5 @@ where
         return Ok(Box::new(tool));
     }
 
-    Err(ToolError::NoToolDetected)
+    Err(Error::NoToolDetected)
 }

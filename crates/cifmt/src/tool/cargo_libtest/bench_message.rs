@@ -1,7 +1,7 @@
 //! Benchmark result messages from cargo test.
 
 use crate::ci::{GitHub, Plain};
-use crate::message::CiMessage;
+use crate::ci_message::CiMessage;
 use serde::Deserialize;
 
 /// Benchmark result message.
@@ -22,7 +22,7 @@ impl CiMessage<Plain> for BenchMessage {
     fn format(&self) -> String {
         let throughput = self
             .mib_per_second
-            .map(|mb| format!(" ({} MiB/s)", mb))
+            .map(|mb| format!(" ({mb} MiB/s)"))
             .unwrap_or_default();
         format!(
             "BENCH: {}: {} ns/iter (± {}){}",
@@ -35,7 +35,7 @@ impl CiMessage<GitHub> for BenchMessage {
     fn format(&self) -> String {
         let throughput = self
             .mib_per_second
-            .map(|mb| format!(" ({} MiB/s)", mb))
+            .map(|mb| format!(" ({mb} MiB/s)"))
             .unwrap_or_default();
         GitHub::notice(&format!(
             "{}: {} ns/iter (± {}){}",
@@ -47,14 +47,14 @@ impl CiMessage<GitHub> for BenchMessage {
 }
 
 #[cfg(test)]
-pub mod test_data {
+pub(crate) mod tests {
     use super::BenchMessage;
     use serde_json::json;
 
     /// Test data for bench messages: (JSON value, message instance, description)
-    pub fn bench_cases() -> impl Iterator<Item = (&'static str, serde_json::Value, BenchMessage)> {
+    pub fn cases() -> impl Iterator<Item = (String, serde_json::Value, BenchMessage)> {
         [(
-            "bench",
+            "bench".to_owned(),
             json!({
                 "type": "bench",
                 "name": "bench_example",
@@ -62,7 +62,7 @@ pub mod test_data {
                 "deviation": 56,
             }),
             BenchMessage {
-                name: "bench_example".to_string(),
+                name: "bench_example".to_owned(),
                 median: 1234,
                 deviation: 56,
                 mib_per_second: None,

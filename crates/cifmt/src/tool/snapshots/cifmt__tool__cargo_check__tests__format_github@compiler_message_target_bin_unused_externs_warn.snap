@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_check.rs
+expression: formatted
+---
+::warning title=Unused Dependencies::Unused dependencies: serde, tokio

@@ -1,0 +1,6 @@
+---
+source: crates/cifmt/src/tool/cargo_check.rs
+expression: formatted
+---
+Future incompatibility warnings detected:
+error: unused variable: `x` (error: unused_variables)

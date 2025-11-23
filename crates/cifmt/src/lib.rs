@@ -21,10 +21,16 @@
 //!
 
 pub mod ci;
-pub mod message;
+pub mod ci_message;
 pub mod tool;
 
 pub mod prelude {
+    //! A prelude module for convenient imports.
+    //!
+    //! This module provides convenient re-exports of commonly used types and
+    //! traits from the `cifmt` crate, allowing for easier and more concise
+    //! imports.
+    #![expect(clippy::pub_use, reason = "convenience re-exports")]
     pub use crate::ci::Platform;
-    pub use crate::message::CiMessage;
+    pub use crate::ci_message::CiMessage;
 }

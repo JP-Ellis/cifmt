@@ -1,7 +1,7 @@
 //! Diagnostic messages from rustc.
 
-use crate::ci::GitHub;
-use crate::message::CiMessage;
+use crate::ci::{GitHub, Plain};
+use crate::ci_message::CiMessage;
 use serde::{Deserialize, Serialize};
 
 /// A diagnostic message from the compiler.
@@ -21,9 +21,47 @@ pub struct Diagnostic {
     pub rendered: Option<String>,
 }
 
-impl CiMessage for Diagnostic {
-    type Platform = GitHub;
+impl CiMessage<Plain> for Diagnostic {
+    fn format(&self) -> String {
+        let mut result = String::new();
 
+        // Format the main diagnostic
+        let annotation = match self.level {
+            DiagnosticLevel::Error | DiagnosticLevel::InternalCompilerError => {
+                let title = if let Some(code) = &self.code {
+                    format!("{}: {}", self.level, code.code)
+                } else {
+                    self.level.to_string()
+                };
+
+                format!("error: {} ({})\n", self.message, title)
+            }
+            DiagnosticLevel::Warning => {
+                let title = if let Some(code) = &self.code {
+                    format!("{}: {}", self.level, code.code)
+                } else {
+                    self.level.to_string()
+                };
+
+                format!("warning: {} ({})\n", self.message, title)
+            }
+            DiagnosticLevel::Note | DiagnosticLevel::Help | DiagnosticLevel::FailureNote => {
+                format!("{}: {}\n", self.level, self.message)
+            }
+        };
+
+        result.push_str(&annotation);
+
+        // Format child diagnostics (notes, help messages, etc.)
+        for child in &self.children {
+            result.push_str(&<Diagnostic as CiMessage<Plain>>::format(child));
+        }
+
+        result
+    }
+}
+
+impl CiMessage<GitHub> for Diagnostic {
     fn format(&self) -> String {
         // Find the primary span for location information
         let primary_span = self.spans.iter().find(|s| s.is_primary);
@@ -93,7 +131,7 @@ impl CiMessage for Diagnostic {
 
         // Format child diagnostics (notes, help messages, etc.)
         for child in &self.children {
-            result.push_str(&child.format());
+            result.push_str(&<Diagnostic as CiMessage<GitHub>>::format(child));
         }
 
         result
@@ -219,16 +257,19 @@ pub struct DiagnosticSpanMacroExpansion {
 }
 
 #[cfg(test)]
-pub mod test_data {
+pub(crate) mod tests {
     use super::{Diagnostic, DiagnosticCode, DiagnosticLevel, DiagnosticSpan};
     use serde_json::json;
 
     /// Test data for diagnostic messages.
-    pub fn diagnostic_cases() -> impl Iterator<Item = (&'static str, serde_json::Value, Diagnostic)>
-    {
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Test data with many fields and variants"
+    )]
+    pub fn cases() -> impl Iterator<Item = (String, serde_json::Value, Diagnostic)> {
         [
             (
-                "error_with_code",
+                "error_with_code".to_owned(),
                 json!({
                     "$message_type": "diagnostic",
                     "message": "unused variable: `x`",
@@ -260,14 +301,14 @@ pub mod test_data {
                     "rendered": null,
                 }),
                 Diagnostic {
-                    message: "unused variable: `x`".to_string(),
+                    message: "unused variable: `x`".to_owned(),
                     code: Some(DiagnosticCode {
-                        code: "unused_variables".to_string(),
+                        code: "unused_variables".to_owned(),
                         explanation: None,
                     }),
                     level: DiagnosticLevel::Error,
                     spans: vec![DiagnosticSpan {
-                        file_name: "src/main.rs".to_string(),
+                        file_name: "src/main.rs".to_owned(),
                         byte_start: 50,
                         byte_end: 51,
                         line_start: 3,
@@ -276,11 +317,11 @@ pub mod test_data {
                         column_end: 10,
                         is_primary: true,
                         text: vec![super::DiagnosticSpanLine {
-                            text: "    let x = 5;".to_string(),
+                            text: "    let x = 5;".to_owned(),
                             highlight_start: 9,
                             highlight_end: 10,
                         }],
-                        label: Some("unused variable".to_string()),
+                        label: Some("unused variable".to_owned()),
                         suggested_replacement: None,
                         suggestion_applicability: None,
                         expansion: None,
@@ -290,7 +331,7 @@ pub mod test_data {
                 },
             ),
             (
-                "warning_without_code",
+                "warning_without_code".to_owned(),
                 json!({
                     "$message_type": "diagnostic",
                     "message": "unused import: `std::io`",
@@ -319,11 +360,11 @@ pub mod test_data {
                     "rendered": null,
                 }),
                 Diagnostic {
-                    message: "unused import: `std::io`".to_string(),
+                    message: "unused import: `std::io`".to_owned(),
                     code: None,
                     level: DiagnosticLevel::Warning,
                     spans: vec![DiagnosticSpan {
-                        file_name: "src/lib.rs".to_string(),
+                        file_name: "src/lib.rs".to_owned(),
                         byte_start: 10,
                         byte_end: 18,
                         line_start: 1,
@@ -332,7 +373,7 @@ pub mod test_data {
                         column_end: 13,
                         is_primary: true,
                         text: vec![super::DiagnosticSpanLine {
-                            text: "use std::io;".to_string(),
+                            text: "use std::io;".to_owned(),
                             highlight_start: 5,
                             highlight_end: 13,
                         }],

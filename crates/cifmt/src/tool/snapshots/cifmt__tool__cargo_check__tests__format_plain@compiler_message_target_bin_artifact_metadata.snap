@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_check.rs
+expression: formatted
+---
+Generated artifact: target/debug/deps/libmylib.rmeta (metadata)

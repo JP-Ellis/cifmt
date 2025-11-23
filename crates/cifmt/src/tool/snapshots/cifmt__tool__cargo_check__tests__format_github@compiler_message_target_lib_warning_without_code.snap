@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_check.rs
+expression: formatted
+---
+::warning file=src/lib.rs,line=1,col=5,endLine=1,endColumn=13,title=warning::unused import: `std::io`

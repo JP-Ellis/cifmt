@@ -1,7 +1,7 @@
 //! Test suite-level events from cargo test.
 
 use crate::ci::{GitHub, Plain};
-use crate::message::CiMessage;
+use crate::ci_message::CiMessage;
 use serde::Deserialize;
 
 /// Suite-level events.
@@ -71,7 +71,7 @@ pub enum SuiteMessage {
 impl CiMessage<Plain> for SuiteMessage {
     fn format(&self) -> String {
         match self {
-            &Self::Discovery => "SUITE: Test Discovery Started".to_string(),
+            &Self::Discovery => "SUITE: Test Discovery Started".to_owned(),
 
             Self::Completed {
                 tests,
@@ -79,14 +79,12 @@ impl CiMessage<Plain> for SuiteMessage {
                 total,
                 ignored,
             } => format!(
-                "SUITE: Test Discovery Completed - Discovered {} items: {} tests, {} benchmarks, {} ignored",
-                total, tests, benchmarks, ignored
+                "SUITE: Test Discovery Completed - Discovered {total} items: {tests} tests, {benchmarks} benchmarks, {ignored} ignored"
             ),
 
-            &Self::Started {
-                test_count,
-                shuffle_seed: _,
-            } => format!("SUITE: Test Suite Started - Running {} tests", test_count),
+            &Self::Started { test_count, .. } => {
+                format!("SUITE: Test Suite Started - Running {test_count} tests")
+            }
 
             Self::Failed {
                 passed,
@@ -97,11 +95,10 @@ impl CiMessage<Plain> for SuiteMessage {
                 exec_time,
             } => {
                 let time_info = exec_time
-                    .map(|t| format!(" in {:.2}s", t))
+                    .map(|t| format!(" in {t:.2}s"))
                     .unwrap_or_default();
                 format!(
-                    "SUITE: Test Suite Failed - {} failed, {} passed, {} ignored, {} measured, {} filtered out{}",
-                    failed, passed, ignored, measured, filtered_out, time_info
+                    "SUITE: Test Suite Failed - {failed} failed, {passed} passed, {ignored} ignored, {measured} measured, {filtered_out} filtered out{time_info}"
                 )
             }
 
@@ -114,11 +111,10 @@ impl CiMessage<Plain> for SuiteMessage {
                 exec_time,
             } => {
                 let time_info = exec_time
-                    .map(|t| format!(" in {:.2}s", t))
+                    .map(|t| format!(" in {t:.2}s"))
                     .unwrap_or_default();
                 format!(
-                    "SUITE: Test Suite Passed - {} passed, {} failed, {} ignored, {} measured, {} filtered out{}",
-                    passed, failed, ignored, measured, filtered_out, time_info
+                    "SUITE: Test Suite Passed - {passed} passed, {failed} failed, {ignored} ignored, {measured} measured, {filtered_out} filtered out{time_info}"
                 )
             }
         }
@@ -148,10 +144,7 @@ impl CiMessage<GitHub> for SuiteMessage {
                 parts.join("")
             }
 
-            &Self::Started {
-                test_count,
-                shuffle_seed: _,
-            } => {
+            &Self::Started { test_count, .. } => {
                 // We don't start a group here because the individual tests will
                 // create their own groups.
                 GitHub::notice(&format!("Running {test_count} tests"))
@@ -168,7 +161,7 @@ impl CiMessage<GitHub> for SuiteMessage {
                 exec_time,
             } => {
                 let time_info = exec_time
-                    .map(|t| format!(" in {:.2}s", t))
+                    .map(|t| format!(" in {t:.2}s"))
                     .unwrap_or_default();
                 GitHub::error(&format!(
                         "{failed} failed, {passed} passed, {ignored} ignored, {measured} measured, {filtered_out} filtered out{time_info}"
@@ -186,7 +179,7 @@ impl CiMessage<GitHub> for SuiteMessage {
                 exec_time,
             } => {
                 let time_info = exec_time
-                    .map(|t| format!(" in {:.2}s", t))
+                    .map(|t| format!(" in {t:.2}s"))
                     .unwrap_or_default();
                 GitHub::notice(&format!(
                         "{passed} passed, {failed} failed, {ignored} ignored, {measured} measured, {filtered_out} filtered out{time_info}"
@@ -199,15 +192,15 @@ impl CiMessage<GitHub> for SuiteMessage {
 }
 
 #[cfg(test)]
-pub mod test_data {
+pub(crate) mod tests {
     use super::SuiteMessage;
     use serde_json::json;
 
     /// Test data for suite messages: (JSON value, expected message, description)
-    pub fn suite_cases() -> impl Iterator<Item = (&'static str, serde_json::Value, SuiteMessage)> {
+    pub fn cases() -> impl Iterator<Item = (String, serde_json::Value, SuiteMessage)> {
         [
             (
-                "suite_discovery",
+                "suite_discovery".to_owned(),
                 json!({
                     "type": "suite",
                     "event": "discovery",
@@ -215,7 +208,7 @@ pub mod test_data {
                 SuiteMessage::Discovery,
             ),
             (
-                "suite_completed",
+                "suite_completed".to_owned(),
                 json!({
                     "type": "suite",
                     "event": "completed",
@@ -232,7 +225,7 @@ pub mod test_data {
                 },
             ),
             (
-                "suite_started",
+                "suite_started".to_owned(),
                 json!({
                     "type": "suite",
                     "event": "started",
@@ -244,7 +237,7 @@ pub mod test_data {
                 },
             ),
             (
-                "suite_ok",
+                "suite_ok".to_owned(),
                 json!({
                     "type": "suite",
                     "event": "ok",
@@ -265,7 +258,7 @@ pub mod test_data {
                 },
             ),
             (
-                "suite_failed",
+                "suite_failed".to_owned(),
                 json!({
                     "type": "suite",
                     "event": "failed",

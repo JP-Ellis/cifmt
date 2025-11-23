@@ -1,7 +1,7 @@
 //! Doctest timing report messages from cargo test.
 
 use crate::ci::{GitHub, Plain};
-use crate::message::CiMessage;
+use crate::ci_message::CiMessage;
 use serde::Deserialize;
 
 /// Doctest timing report.
@@ -34,15 +34,14 @@ impl CiMessage<GitHub> for ReportMessage {
 }
 
 #[cfg(test)]
-pub mod test_data {
+pub(crate) mod tests {
     use super::ReportMessage;
     use serde_json::json;
 
     /// Test data for report messages: (JSON value, message instance, description)
-    pub fn report_cases() -> impl Iterator<Item = (&'static str, serde_json::Value, ReportMessage)>
-    {
+    pub fn cases() -> impl Iterator<Item = (String, serde_json::Value, ReportMessage)> {
         [(
-            "report",
+            "report".to_owned(),
             json!({
                 "type": "report",
                 "total_time": 10.5,

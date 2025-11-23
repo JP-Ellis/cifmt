@@ -52,10 +52,12 @@ members = ["crates/*"]
 
   arbitrary_source_item_ordering = "allow"
   else_if_without_else           = "allow"
+  error_impl_error               = "allow"
   impl_trait_in_params           = "allow"
   implicit_return                = "allow"
   min_ident_chars                = "allow"
   missing_trait_methods          = "allow"
+  non_ascii_literal              = "allow"
   pattern_type_mismatch          = "allow"
   pub_with_shorthand             = "allow"
   question_mark_used             = "allow"

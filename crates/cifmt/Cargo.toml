@@ -8,9 +8,14 @@ authors = ["JP-Ellis <josh@jpellis.me>"]
 
 edition = "2024"
 
+categories = ["development-tools::continuous-integration"]
+keywords   = ["ci", "formatter"]
 license    = { workspace = true }
 readme     = { workspace = true }
 repository = { workspace = true }
+
+[lints]
+workspace = true
 
 [dependencies]
 bon        = { workspace = true }

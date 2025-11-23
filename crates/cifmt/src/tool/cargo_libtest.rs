@@ -12,16 +12,17 @@ mod test_message;
 
 use std::io::BufRead;
 
-pub use bench_message::BenchMessage;
-pub use report_message::ReportMessage;
-pub use suite_message::SuiteMessage;
-pub use test_message::TestMessage;
-
 use crate::{
     ci::{GitHub, Plain},
-    tool::Tool,
+    ci_message::CiMessage,
+    tool::{
+        Detect, Tool,
+        cargo_libtest::{
+            bench_message::BenchMessage, report_message::ReportMessage,
+            suite_message::SuiteMessage, test_message::TestMessage,
+        },
+    },
 };
-use crate::{message::CiMessage, tool::ToolDetect};
 use serde::Deserialize;
 
 /// A message from libtest's JSON formatter.
@@ -74,23 +75,21 @@ pub struct CargoLibtest {
     buffer: Vec<u8>,
 }
 
-impl ToolDetect for CargoLibtest {
+impl Detect for CargoLibtest {
     type Tool = Self;
+
+    #[inline]
     fn detect(sample: &[u8]) -> Option<Self::Tool> {
         let (oks, errs) = sample
             .lines()
             .map_while(Result::ok)
             .map(|line| serde_json::from_str::<LibTestMessage>(&line))
             .fold((0_u8, 0_u8), |(oks, errs), res| match res {
-                Ok(_) => (oks + 1, errs),
-                Err(_) => (oks, errs + 1),
+                Ok(_) => (oks.saturating_add(1), errs),
+                Err(_) => (oks, errs.saturating_add(1)),
             });
 
-        if oks > errs {
-            Some(Self::default())
-        } else {
-            None
-        }
+        (oks > errs).then(Self::default)
     }
 }
 
@@ -98,10 +97,12 @@ impl Tool for CargoLibtest {
     type Message = LibTestMessage;
     type Error = serde_json::Error;
 
+    #[inline]
     fn name(&self) -> &'static str {
         "cargo-libtest"
     }
 
+    #[inline]
     fn parse(&mut self, buf: &[u8]) -> Vec<Result<Self::Message, Self::Error>> {
         let mut results = Vec::new();
 
@@ -110,9 +111,11 @@ impl Tool for CargoLibtest {
 
         // Process complete lines
         while let Some(newline_pos) = self.buffer.iter().position(|&b| b == b'\n') {
-            // Extract line (excluding newline)
-            let line = self.buffer.drain(..=newline_pos).collect::<Vec<u8>>();
-            let line = &line[..line.len() - 1]; // Remove newline
+            let mut line_bytes = self.buffer.drain(..=newline_pos).collect::<Vec<u8>>();
+            if line_bytes.last() == Some(&b'\n') {
+                line_bytes.pop();
+            }
+            let line = line_bytes.as_slice();
 
             // Skip empty lines
             if line.is_empty() {
@@ -137,10 +140,10 @@ impl Tool for CargoLibtest {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use pretty_assertions::assert_eq;
 
-    use crate::message::CiMessage;
+    use crate::ci_message::CiMessage;
     use crate::{
         ci::{GitHub, Plain},
         tool::cargo_libtest::LibTestMessage,
@@ -154,26 +157,26 @@ mod tests {
         }
     }
 
-    fn all_cases() -> impl Iterator<Item = (&'static str, serde_json::Value, LibTestMessage)> {
-        super::suite_message::test_data::suite_cases()
+    fn cases() -> impl Iterator<Item = (String, serde_json::Value, LibTestMessage)> {
+        super::suite_message::tests::cases()
             .map(|(desc, json, msg)| (desc, json, LibTestMessage::Suite(msg)))
             .chain(
-                super::test_message::test_data::test_cases()
+                super::test_message::tests::cases()
                     .map(|(desc, json, msg)| (desc, json, LibTestMessage::Test(msg))),
             )
             .chain(
-                super::bench_message::test_data::bench_cases()
+                super::bench_message::tests::cases()
                     .map(|(desc, json, msg)| (desc, json, LibTestMessage::Bench(msg))),
             )
             .chain(
-                super::report_message::test_data::report_cases()
+                super::report_message::tests::cases()
                     .map(|(desc, json, msg)| (desc, json, LibTestMessage::Report(msg))),
             )
     }
 
     #[test]
     fn deserialize_all() {
-        for (_, json_value, expected) in all_cases() {
+        for (_, json_value, expected) in cases() {
             let msg: LibTestMessage =
                 serde_json::from_value(json_value).expect("Failed to deserialize");
             assert_eq!(msg, expected);
@@ -182,7 +185,7 @@ mod tests {
 
     #[test]
     fn format_plain() {
-        for (desc, _, message) in all_cases() {
+        for (desc, _, message) in cases() {
             set_snapshot_suffix!("{desc}");
             let formatted = <LibTestMessage as CiMessage<Plain>>::format(&message);
             insta::assert_snapshot!(formatted);
@@ -191,7 +194,7 @@ mod tests {
 
     #[test]
     fn format_github() {
-        for (desc, _, message) in all_cases() {
+        for (desc, _, message) in cases() {
             set_snapshot_suffix!("{desc}");
             let formatted = <LibTestMessage as CiMessage<GitHub>>::format(&message);
             insta::assert_snapshot!(formatted);

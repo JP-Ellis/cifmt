@@ -1,0 +1,4 @@
+---
+source: crates/cifmt/src/tool/cargo_check.rs
+expression: formatted
+---

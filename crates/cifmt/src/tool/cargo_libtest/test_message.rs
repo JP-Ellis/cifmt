@@ -1,7 +1,7 @@
 //! Individual test events from cargo test.
 
 use crate::ci::{GitHub, Plain};
-use crate::message::CiMessage;
+use crate::ci_message::CiMessage;
 use serde::Deserialize;
 
 /// Individual test events.
@@ -92,11 +92,10 @@ impl CiMessage<Plain> for TestMessage {
                 end_line,
                 end_col,
             } => format!(
-                "TEST DISCOVERED: {} (ignored: {}, message: {:?}, location: {}:{}:{}-{}:{})",
-                name, ignore, ignore_message, source_path, start_line, start_col, end_line, end_col
+                "TEST DISCOVERED: {name} (ignored: {ignore}, message: {ignore_message:?}, location: {source_path}:{start_line}:{start_col}-{end_line}:{end_col})"
             ),
 
-            Self::Started { name } => format!("TEST STARTED: {}", name),
+            Self::Started { name } => format!("TEST STARTED: {name}"),
 
             Self::Ok {
                 name,
@@ -105,15 +104,15 @@ impl CiMessage<Plain> for TestMessage {
             } => {
                 let mut parts = Vec::with_capacity(2);
 
-                if let Some(stdout) = stdout.as_ref().filter(|s| !s.is_empty()) {
-                    parts.push(stdout.clone());
+                if let Some(v) = stdout.as_ref().filter(|s| !s.is_empty()) {
+                    parts.push(v.clone());
                 }
 
                 parts.push(format!(
                     "TEST OK: {}{}",
                     name,
                     exec_time
-                        .map(|t| format!(" (executed in {:.2}s)", t))
+                        .map(|t| format!(" (executed in {t:.2}s)"))
                         .unwrap_or_default()
                 ));
 
@@ -128,26 +127,26 @@ impl CiMessage<Plain> for TestMessage {
             } => {
                 let mut parts = Vec::with_capacity(2);
 
-                if let Some(stdout) = stdout.as_ref().filter(|s| !s.is_empty()) {
-                    parts.push(stdout.clone());
+                if let Some(v) = stdout.as_ref().filter(|s| !s.is_empty()) {
+                    parts.push(v.clone());
                 }
 
                 parts.push(format!(
                     "TEST FAILED: {}{}{}\n",
                     name,
                     exec_time
-                        .map(|t| format!(" (executed in {:.2}s)", t))
+                        .map(|t| format!(" (executed in {t:.2}s)"))
                         .unwrap_or_default(),
                     message
                         .as_ref()
-                        .map(|m| format!(" - {}", m))
+                        .map(|m| format!(" - {m}"))
                         .unwrap_or_default()
                 ));
 
                 parts.join("\n")
             }
 
-            Self::Timeout { name } => format!("TEST TIMEOUT: {}", name),
+            Self::Timeout { name } => format!("TEST TIMEOUT: {name}"),
 
             Self::Ignored { name, message } => format!(
                 "TEST IGNORED: {}{}",
@@ -187,14 +186,14 @@ impl CiMessage<GitHub> for TestMessage {
             } => {
                 let mut parts = Vec::with_capacity(3);
 
-                if let Some(stdout) = stdout.as_ref().filter(|s| !s.is_empty()) {
-                    parts.push(stdout.clone() + "\n");
+                if let Some(v) = stdout.as_ref().filter(|s| !s.is_empty()) {
+                    parts.push(v.clone() + "\n");
                 }
 
                 parts.push(
                     GitHub::notice(
                         &exec_time
-                            .map(|t| format!("Executed in {:.2}s", t))
+                            .map(|t| format!("Executed in {t:.2}s"))
                             .unwrap_or_default(),
                     )
                     .title(&format!("Test Passed: {name}"))
@@ -214,14 +213,14 @@ impl CiMessage<GitHub> for TestMessage {
             } => {
                 let mut parts = Vec::with_capacity(3);
 
-                if let Some(stdout) = stdout.as_ref().filter(|s| !s.is_empty()) {
-                    parts.push(stdout.clone() + "\n");
+                if let Some(v) = stdout.as_ref().filter(|s| !s.is_empty()) {
+                    parts.push(v.clone() + "\n");
                 }
 
                 parts.push(GitHub::endgroup());
 
                 let time_info = exec_time
-                    .map(|t| format!(" (executed in {:.2}s)", t))
+                    .map(|t| format!(" (executed in {t:.2}s)"))
                     .unwrap_or_default();
 
                 parts.push(
@@ -253,15 +252,15 @@ impl CiMessage<GitHub> for TestMessage {
 }
 
 #[cfg(test)]
-pub mod test_data {
+pub(crate) mod tests {
     use super::TestMessage;
     use serde_json::json;
 
     /// Test data for test messages: (JSON value, message instance, description)
-    pub fn test_cases() -> impl Iterator<Item = (&'static str, serde_json::Value, TestMessage)> {
+    pub fn cases() -> impl Iterator<Item = (String, serde_json::Value, TestMessage)> {
         [
             (
-                "test_discovered",
+                "test_discovered".to_owned(),
                 json!({
                     "type": "test",
                     "event": "discovered",
@@ -274,10 +273,10 @@ pub mod test_data {
                     "end_col": 5,
                 }),
                 TestMessage::Discovered {
-                    name: "test_example".to_string(),
+                    name: "test_example".to_owned(),
                     ignore: false,
                     ignore_message: None,
-                    source_path: "src/lib.rs".to_string(),
+                    source_path: "src/lib.rs".to_owned(),
                     start_line: 10,
                     start_col: 4,
                     end_line: 15,
@@ -285,18 +284,18 @@ pub mod test_data {
                 },
             ),
             (
-                "test_started",
+                "test_started".to_owned(),
                 json!({
                     "type": "test",
                     "event": "started",
                     "name": "test_example",
                 }),
                 TestMessage::Started {
-                    name: "test_example".to_string(),
+                    name: "test_example".to_owned(),
                 },
             ),
             (
-                "test_ok",
+                "test_ok".to_owned(),
                 json!({
                     "type":"test",
                     "event":"ok",
@@ -304,13 +303,13 @@ pub mod test_data {
                     "exec_time":0.001,
                 }),
                 TestMessage::Ok {
-                    name: "test_example".to_string(),
+                    name: "test_example".to_owned(),
                     exec_time: Some(0.001),
                     stdout: None,
                 },
             ),
             (
-                "test_failed",
+                "test_failed".to_owned(),
                 json!({
                     "type":"test",
                     "event":"failed",
@@ -319,32 +318,32 @@ pub mod test_data {
                     "message":"assertion failed",
                 }),
                 TestMessage::Failed {
-                    name: "test_failing".to_string(),
+                    name: "test_failing".to_owned(),
                     exec_time: Some(0.003),
                     stdout: None,
-                    message: Some("assertion failed".to_string()),
+                    message: Some("assertion failed".to_owned()),
                 },
             ),
             (
-                "test_timeout",
+                "test_timeout".to_owned(),
                 json!({
                     "type":"test",
                     "event":"timeout",
                     "name":"test_hanging",
                 }),
                 TestMessage::Timeout {
-                    name: "test_hanging".to_string(),
+                    name: "test_hanging".to_owned(),
                 },
             ),
             (
-                "test_ignored",
+                "test_ignored".to_owned(),
                 json!({
                     "type":"test",
                     "event":"ignored",
                     "name":"test_ignored",
                 }),
                 TestMessage::Ignored {
-                    name: "test_ignored".to_string(),
+                    name: "test_ignored".to_owned(),
                     message: None,
                 },
             ),

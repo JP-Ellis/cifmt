@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_check.rs
+expression: formatted
+---
+::debug::Generated artifact: target/debug/myapp (link)

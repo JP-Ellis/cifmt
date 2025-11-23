@@ -1,0 +1,5 @@
+---
+source: crates/cifmt/src/tool/cargo_check.rs
+expression: formatted
+---
+::error file=src/main.rs,line=3,col=9,endLine=3,endColumn=10,title=error: unused_variables::unused variable: `x`

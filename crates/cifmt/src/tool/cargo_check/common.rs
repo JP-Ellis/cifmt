@@ -42,3 +42,107 @@ pub struct Profile {
     /// Whether the --test flag is used.
     pub test: bool,
 }
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use super::{Profile, Target};
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    /// Test data for Target structs.
+    pub fn target_cases() -> impl Iterator<Item = (String, serde_json::Value, Target)> {
+        [
+            (
+                "target_lib".to_owned(),
+                json!({
+                    "kind": ["lib"],
+                    "crate_types": ["lib"],
+                    "name": "mylib",
+                    "src_path": "/path/to/src/lib.rs",
+                    "edition": "2021",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true,
+                }),
+                Target {
+                    kind: vec!["lib".to_owned()],
+                    crate_types: vec!["lib".to_owned()],
+                    name: "mylib".to_owned(),
+                    src_path: PathBuf::from("/path/to/src/lib.rs"),
+                    edition: "2021".to_owned(),
+                    required_features: vec![],
+                    doc: true,
+                    doctest: true,
+                    test: true,
+                },
+            ),
+            (
+                "target_bin".to_owned(),
+                json!({
+                    "kind": ["bin"],
+                    "crate_types": ["bin"],
+                    "name": "myapp",
+                    "src_path": "/path/to/src/main.rs",
+                    "edition": "2021",
+                    "required_features": ["feature1", "feature2"],
+                    "doc": true,
+                    "doctest": false,
+                    "test": false,
+                }),
+                Target {
+                    kind: vec!["bin".to_owned()],
+                    crate_types: vec!["bin".to_owned()],
+                    name: "myapp".to_owned(),
+                    src_path: PathBuf::from("/path/to/src/main.rs"),
+                    edition: "2021".to_owned(),
+                    required_features: vec!["feature1".to_owned(), "feature2".to_owned()],
+                    doc: true,
+                    doctest: false,
+                    test: false,
+                },
+            ),
+        ]
+        .into_iter()
+    }
+
+    /// Test data for Profile structs.
+    pub fn profile_cases() -> impl Iterator<Item = (String, serde_json::Value, Profile)> {
+        [
+            (
+                "profile_debug".to_owned(),
+                json!({
+                    "opt_level": "0",
+                    "debuginfo": 2,
+                    "debug_assertions": true,
+                    "overflow_checks": true,
+                    "test": false,
+                }),
+                Profile {
+                    opt_level: "0".to_owned(),
+                    debuginfo: Some(json!(2)),
+                    debug_assertions: true,
+                    overflow_checks: true,
+                    test: false,
+                },
+            ),
+            (
+                "profile_release".to_owned(),
+                json!({
+                    "opt_level": "3",
+                    "debuginfo": null,
+                    "debug_assertions": false,
+                    "overflow_checks": false,
+                    "test": false,
+                }),
+                Profile {
+                    opt_level: "3".to_owned(),
+                    debuginfo: None,
+                    debug_assertions: false,
+                    overflow_checks: false,
+                    test: false,
+                },
+            ),
+        ]
+        .into_iter()
+    }
+}

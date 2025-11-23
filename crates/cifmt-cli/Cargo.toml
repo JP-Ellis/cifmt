@@ -8,6 +8,8 @@ authors = ["JP-Ellis <josh@jpellis.me>"]
 
 edition = "2024"
 
+categories = ["development-tools::continuous-integration"]
+keywords   = ["ci", "formatter"]
 license    = { workspace = true }
 readme     = { workspace = true }
 repository = { workspace = true }
@@ -17,6 +19,7 @@ name = "cifmt"
 path = "src/main.rs"
 
 [dependencies]
+cifmt              = { path = "../cifmt" }
 clap               = { version = "4.5", features = ["derive", "string"] }
 serde              = { workspace = true }
 serde_json         = { workspace = true }

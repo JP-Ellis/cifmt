@@ -3,25 +3,28 @@
 //! The build script is used by Cargo to perform additional tasks during the
 //! build process. Cargo will execute the [`main`] function.
 
-#![expect(clippy::expect_used, reason = "Build script should panic on error")]
+#![expect(
+    clippy::print_stderr,
+    clippy::expect_used,
+    reason = "Build script should fail loudly on errors"
+)]
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+/// The prefix used for version tags in Git.
 const VERSION_PREFIX: &str = "cifmt-cli/";
 
 fn main() {
     if let Some(repo) = locate_git_dir() {
         rerun_on_git_changes(&repo);
-        expose_commit_info(&repo)
-            .inspect_err(|err| {
-                eprintln!("Failed to expose commit info: {}", err);
-            })
-            .ok();
+        if let Err(err) = expose_commit_info(&repo) {
+            eprintln!("Failed to expose commit info: {err}");
+        }
     }
 }
 
-/// Locate the Git repository
+/// Locate the Git depository
 ///
 /// This function attempts to find the Git repository by traversing
 /// upwards from the current directory. If a `.git` directory is found,
@@ -95,15 +98,15 @@ fn expose_commit_info(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
 
     // The describe part may not always be available
     if let Some(describe) = parts.next() {
-        let mut parts = describe.rsplitn(3, '-');
-        parts.next(); // Skip the commit hash part
+        let mut describe_parts = describe.rsplitn(3, '-');
+        describe_parts.next(); // Skip the commit hash part
         println!(
             "cargo:rustc-env=CARGO_BUILD_TAG_DISTANCE={}",
-            parts.next().expect("Expected tag distance")
+            describe_parts.next().expect("Expected tag distance")
         );
         println!(
             "cargo:rustc-env=CARGO_BUILD_TAG={}",
-            parts.next().expect("Expected the version")
+            describe_parts.next().expect("Expected the version")
         );
     }
 

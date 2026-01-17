@@ -26,6 +26,24 @@ pub struct Version {
     pub commit_info: Option<CommitInfo>,
 }
 
+impl Version {
+    fn as_semver(&self) -> String {
+        let mut semver = format!("{}.{}.{}", self.version.0, self.version.1, self.version.2);
+
+        if let Some(CommitInfo {
+            tag_distance: Some(d),
+            short_commit_hash,
+            ..
+        }) = &self.commit_info
+            && *d > 0
+        {
+            semver.push_str(&format!("-dev{d}+{short_commit_hash}"));
+        }
+
+        semver
+    }
+}
+
 impl Default for Version {
     /// Retrieve version information from build-time environment variables.
     ///
@@ -166,7 +184,7 @@ impl CommitInfo {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     use pretty_assertions::assert_eq;
@@ -208,5 +226,35 @@ mod tests {
             }),
         };
         assert_eq!(version.to_string(), "1.2.3.dev5 (abcdef0 2025-01-15)");
+    }
+
+    #[test]
+    fn version_semver_without_dev_commits() {
+        let version = Version {
+            version: (1, 2, 3),
+            commit_info: Some(CommitInfo {
+                short_commit_hash: "abcdef0".to_string(),
+                commit_hash: "abcdef0123456789abcdef0123456789abcdef01".to_string(),
+                commit_date: "2025-01-15".to_string(),
+                tag: Some("v1.2.3".to_string()),
+                tag_distance: Some(0),
+            }),
+        };
+        assert_eq!(version.as_semver(), "1.2.3");
+    }
+
+    #[test]
+    fn version_semver_with_dev_commits() {
+        let version = Version {
+            version: (1, 2, 3),
+            commit_info: Some(CommitInfo {
+                short_commit_hash: "abcdef0".to_string(),
+                commit_hash: "abcdef0123456789abcdef0123456789abcdef01".to_string(),
+                commit_date: "2025-01-15".to_string(),
+                tag: Some("v1.2.3".to_string()),
+                tag_distance: Some(5),
+            }),
+        };
+        assert_eq!(version.as_semver(), "1.2.3-dev5+abcdef0");
     }
 }

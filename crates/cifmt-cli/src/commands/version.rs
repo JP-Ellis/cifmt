@@ -1,4 +1,5 @@
 use crate::{commands::OutputFormat, version::Version};
+use anyhow::Result;
 
 #[derive(Debug, clap::Args)]
 pub(crate) struct Args {
@@ -8,7 +9,8 @@ pub(crate) struct Args {
 }
 
 /// Execute the version command.
-pub(crate) fn execute(Args { output_format }: Args) -> Result<(), Box<dyn std::error::Error>> {
+#[tracing::instrument(skip(output_format))]
+pub(crate) fn execute(Args { output_format }: Args) -> Result<()> {
     let version = Version::default();
 
     match output_format {

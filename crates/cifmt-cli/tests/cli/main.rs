@@ -4,7 +4,7 @@
 // https://github.com/rust-lang/rust-clippy/issues/15764
 #![cfg(test)]
 
-use std::{fmt, path::PathBuf};
+use std::{fmt::Write, path::PathBuf};
 
 mod version;
 
@@ -39,12 +39,14 @@ pub struct TestCommand {
 
 impl TestCommand {
     /// Push a new argument to the command
+    #[must_use]
     pub fn arg(mut self, arg: impl Into<String>) -> Self {
         self.args.push(arg.into());
         self
     }
 
     /// Push multiple arguments to the command
+    #[must_use]
     pub fn args<I, S>(mut self, args: I) -> Self
     where
         I: IntoIterator<Item = S>,
@@ -55,12 +57,14 @@ impl TestCommand {
     }
 
     /// Set an environment variable for the command
+    #[must_use]
     pub fn env(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         self.env.push((key.into(), value.into()));
         self
     }
 
     /// Set multiple environment variables for the command
+    #[must_use]
     pub fn envs<I, K, V>(mut self, envs: I) -> Self
     where
         I: IntoIterator<Item = (K, V)>,
@@ -73,12 +77,14 @@ impl TestCommand {
     }
 
     /// Add an insta filter to the command
+    #[must_use]
     pub fn filter(mut self, pattern: impl Into<String>, replacement: impl Into<String>) -> Self {
         self.filters.push((pattern.into(), replacement.into()));
         self
     }
 
     /// Add multiple insta filters to the command
+    #[must_use]
     pub fn filters<I, P, R>(mut self, filters: I) -> Self
     where
         I: IntoIterator<Item = (P, R)>,
@@ -90,6 +96,7 @@ impl TestCommand {
         self
     }
 
+    #[must_use]
     pub fn run_and_format(&self) -> String {
         let mut cmd = std::process::Command::new(&self.cli);
 

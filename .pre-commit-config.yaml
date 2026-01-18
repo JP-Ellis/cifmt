@@ -47,7 +47,7 @@ repos:
           - --config-file=.yamlfix.toml
 
   - repo: https://github.com/biomejs/pre-commit
-    rev: v2.3.5
+    rev: v2.3.11
     hooks:
       - id: biome-check
 

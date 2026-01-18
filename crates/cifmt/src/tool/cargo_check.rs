@@ -17,10 +17,10 @@ mod compiler_artifact;
 mod compiler_message;
 
 use crate::{
-    ci::{GitHub, Plain},
+    ci::{GitHub, Plain, Platform},
     ci_message::CiMessage,
     tool::{
-        Detect, Tool,
+        Detect, DynTool, Tool,
         cargo_check::{
             build_finished::BuildFinished, build_script_executed::BuildScriptExecuted,
             compiler_artifact::CompilerArtifact, compiler_message::CompilerMessage,
@@ -52,6 +52,7 @@ pub enum CargoMessage {
 }
 
 impl CiMessage<Plain> for CargoMessage {
+    #[inline]
     fn format(&self) -> String {
         match self {
             Self::CompilerMessage(msg) => <CompilerMessage as CiMessage<Plain>>::format(msg),
@@ -65,6 +66,7 @@ impl CiMessage<Plain> for CargoMessage {
 }
 
 impl CiMessage<GitHub> for CargoMessage {
+    #[inline]
     fn format(&self) -> String {
         match self {
             Self::CompilerMessage(msg) => <CompilerMessage as CiMessage<GitHub>>::format(msg),
@@ -145,6 +147,25 @@ impl Tool for CargoCheck {
         }
 
         results
+    }
+}
+
+impl<P: Platform> DynTool<P> for CargoCheck
+where
+    CargoMessage: CiMessage<P>,
+{
+    #[inline]
+    fn name(&self) -> &'static str {
+        Tool::name(self)
+    }
+
+    #[inline]
+    fn parse_and_format(&mut self, buf: &[u8]) -> Vec<String> {
+        self.parse(buf)
+            .into_iter()
+            .filter_map(Result::ok)
+            .map(|msg| msg.format())
+            .collect()
     }
 }
 

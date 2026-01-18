@@ -33,4 +33,5 @@ pub mod prelude {
     #![expect(clippy::pub_use, reason = "convenience re-exports")]
     pub use crate::ci::Platform;
     pub use crate::ci_message::CiMessage;
+    pub use crate::tool::{Detect, DynTool, Tool};
 }

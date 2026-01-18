@@ -13,10 +13,10 @@ mod test_message;
 use std::io::BufRead;
 
 use crate::{
-    ci::{GitHub, Plain},
+    ci::{GitHub, Plain, Platform},
     ci_message::CiMessage,
     tool::{
-        Detect, Tool,
+        Detect, DynTool, Tool,
         cargo_libtest::{
             bench_message::BenchMessage, report_message::ReportMessage,
             suite_message::SuiteMessage, test_message::TestMessage,
@@ -47,6 +47,7 @@ pub enum LibTestMessage {
 }
 
 impl CiMessage<Plain> for LibTestMessage {
+    #[inline]
     fn format(&self) -> String {
         match self {
             Self::Test(test_msg) => <TestMessage as CiMessage<Plain>>::format(test_msg),
@@ -58,6 +59,7 @@ impl CiMessage<Plain> for LibTestMessage {
 }
 
 impl CiMessage<GitHub> for LibTestMessage {
+    #[inline]
     fn format(&self) -> String {
         match self {
             Self::Test(test_msg) => <TestMessage as CiMessage<GitHub>>::format(test_msg),
@@ -136,6 +138,25 @@ impl Tool for CargoLibtest {
         }
 
         results
+    }
+}
+
+impl<P: Platform> DynTool<P> for CargoLibtest
+where
+    LibTestMessage: CiMessage<P>,
+{
+    #[inline]
+    fn name(&self) -> &'static str {
+        Tool::name(self)
+    }
+
+    #[inline]
+    fn parse_and_format(&mut self, buf: &[u8]) -> Vec<String> {
+        self.parse(buf)
+            .into_iter()
+            .filter_map(Result::ok)
+            .map(|msg| msg.format())
+            .collect()
     }
 }
 

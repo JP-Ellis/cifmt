@@ -4,13 +4,15 @@
 //! structured messages (typically JSON). Each submodule defines the message
 //! formats for that tool and implements conversion to CI messages.
 
+#![expect(clippy::pub_use, reason = "convenience re-exports of tool types")]
+
 use crate::ci::Platform;
 
 mod cargo_check;
 mod cargo_libtest;
 
-use cargo_check::CargoCheck;
-use cargo_libtest::CargoLibtest;
+pub use cargo_check::CargoCheck;
+pub use cargo_libtest::CargoLibtest;
 
 /// Trait for types that can detect a tool format from sample output.
 pub trait Detect {
@@ -33,9 +35,9 @@ pub trait Detect {
 /// Trait for tool.
 ///
 /// We assume that each tool has a well-defined set of message formats that can
-/// be parsed and converted into CI messages. In many instances, this set may
-/// be a single message format, but support for multiple formats can be added
-/// by implementing this into the `Message` associated type.
+/// be parsed and converted into CI messages. In many instances, this set may be
+/// a single message format, but support for multiple formats can be added by
+/// implementing this into the `Message` associated type.
 ///
 /// This trait defines capabilities for detecting, reading, and parsing messages
 /// from a specific tool.
@@ -61,8 +63,8 @@ pub trait Tool {
     /// possible messages, returning them as a vector of results.
     ///
     /// If the buffer ends with incomplete data, the parser must be able to
-    /// store any necessary state to continue parsing when more data is
-    /// provided in subsequent calls.
+    /// store any necessary state to continue parsing when more data is provided
+    /// in subsequent calls.
     ///
     /// You can assume that successive calls to `parse` will provide contiguous
     /// data from the tool's output.
@@ -76,6 +78,24 @@ pub trait Tool {
     /// A vector of results, each being either a successfully parsed message or
     /// an error if parsing failed for that message.
     fn parse(&mut self, buf: &[u8]) -> Vec<Result<Self::Message, Self::Error>>;
+}
+
+/// Dynamic tool wrapper that combines parsing and formatting.
+///
+/// This trait is object-safe and allows working with tools polymorphically at
+/// runtime while preserving platform-specific formatting.
+#[expect(
+    clippy::module_name_repetitions,
+    reason = "DynTool is a clear name for a trait that provides dynamic dispatch for tools"
+)]
+pub trait DynTool<P: Platform> {
+    /// Get the tool name.
+    fn name(&self) -> &'static str;
+
+    /// Parse and format messages from the tool's output.
+    ///
+    /// Returns formatted strings ready for output to the specified platform.
+    fn parse_and_format(&mut self, buf: &[u8]) -> Vec<String>;
 }
 
 /// Errors that can occur during tool detection.
@@ -102,14 +122,18 @@ pub enum Error {
 ///
 /// Returns `ToolError::NoToolDetected` if no known tool format is detected.
 #[inline]
-pub fn detect<P: Platform>(buffer: &[u8]) -> Result<Box<dyn std::any::Any>, Error> {
-    if let Some(tool) = CargoCheck::detect(buffer) {
-        tracing::info!("Detected tool format: {}", tool.name());
+pub fn detect<P: Platform + 'static>(buffer: &[u8]) -> Result<Box<dyn DynTool<P>>, Error>
+where
+    cargo_check::CargoCheck: DynTool<P>,
+    cargo_libtest::CargoLibtest: DynTool<P>,
+{
+    if let Some(tool) = cargo_check::CargoCheck::detect(buffer) {
+        tracing::info!("Detected tool format: {}", Tool::name(&tool));
         return Ok(Box::new(tool));
     }
 
-    if let Some(tool) = CargoLibtest::detect(buffer) {
-        tracing::info!("Detected tool format: {}", tool.name());
+    if let Some(tool) = cargo_libtest::CargoLibtest::detect(buffer) {
+        tracing::info!("Detected tool format: {}", Tool::name(&tool));
         return Ok(Box::new(tool));
     }
 

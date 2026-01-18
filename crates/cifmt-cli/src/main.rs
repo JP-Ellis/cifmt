@@ -16,8 +16,9 @@ struct GlobalArgs {
     #[clap(short, long, global = true, action = clap::ArgAction::Count)]
     verbosity: u8,
 
+    /// The subcommand to execute.
     #[command(subcommand)]
-    command: commands::Command,
+    command: Option<commands::Command>,
 }
 
 fn main() -> ExitCode {
@@ -25,8 +26,10 @@ fn main() -> ExitCode {
 
     logging::setup_tracing(args.verbosity);
 
-    match args.command.execute() {
-        Ok(_) => ExitCode::SUCCESS,
+    let command = args.command.unwrap_or_default();
+
+    match command.execute() {
+        Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
             tracing::error!("Error executing command: {}", e);
             ExitCode::FAILURE

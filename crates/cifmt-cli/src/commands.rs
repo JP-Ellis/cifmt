@@ -11,29 +11,46 @@
 //     command's functionality.
 // - Add the command to the `Command` enum in this module.
 
+pub(crate) mod format;
 pub(crate) mod version;
 
+use anyhow::Result;
+
+/// Available subcommands for the CLI.
 #[derive(Debug, clap::Subcommand)]
 pub enum Command {
+    /// Format tool output for CI platforms
+    Format(format::Args),
+
     /// Show version information
     Version(version::Args),
 }
 
+impl Default for Command {
+    fn default() -> Self {
+        Command::Format(format::Args {
+            tool: None,
+            detect: true,
+        })
+    }
+}
+
+/// Output format for command results.
 #[derive(Debug, clap::ValueEnum, Copy, Clone, Default)]
 pub enum OutputFormat {
+    /// Plain text output format.
     #[default]
     Text,
+    /// JSON output format.
     Json,
 }
 
 impl Command {
     /// Execute the command.
-    pub(crate) fn execute(self) -> Result<(), Box<dyn std::error::Error>> {
+    pub(crate) fn execute(self) -> Result<()> {
         match self {
-            Command::Version(args) => {
-                version::execute(args)?;
-            }
+            Command::Format(args) => format::execute(args),
+            Command::Version(args) => version::execute(args),
         }
-        Ok(())
     }
 }

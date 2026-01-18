@@ -19,7 +19,7 @@ members = ["crates/*"]
 
   # Dev dependencies, pinned to ensure reproducibility
   assert_fs         = "=1.1.3"
-  insta             = { version = "=1.43.2", features = ["filters", "json"] }
+  insta             = { version = "=1.46.1", features = ["filters", "json"] }
   pretty_assertions = "=1.4.1"
   rstest            = "=0.26.1"
 

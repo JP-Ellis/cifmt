@@ -2,6 +2,8 @@
 [profile.ci]
 # In CI, we want to run all tests instead of failing fast
 fail-fast = false
+# Some tests are flakey with 'broken pipe' errors in CI environments
+retries = 3
 
   [profile.ci.junit]
   output               = "junit.xml"

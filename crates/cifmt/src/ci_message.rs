@@ -23,7 +23,7 @@ use crate::ci::Platform;
 ///
 /// impl CiMessage<GitHub> for MyMessage {
 ///     fn format(&self) -> String {
-///        Self::Platform::notice(&self.text)
+///        GitHub::notice(&self.text)
 ///            .file(&self.file)
 ///            .line(self.line)
 ///            .format()

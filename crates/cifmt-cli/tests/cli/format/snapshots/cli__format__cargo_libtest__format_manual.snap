@@ -1,0 +1,27 @@
+---
+source: crates/cifmt-cli/tests/cli/format/cargo_libtest.rs
+expression: cmd.run_and_format_with_stdin(Some(&output))
+---
+Success: true
+Exit Code: 0
+--- STDOUT ---
+SUITE: Test Suite Started - Running 4 tests
+TEST STARTED: tests::test_add_negative
+TEST STARTED: tests::test_add_positive
+TEST STARTED: tests::test_failing
+TEST STARTED: tests::test_ignored
+TEST OK: tests::test_add_negative
+TEST OK: tests::test_add_positive
+TEST IGNORED: tests::test_ignored
+
+thread 'tests::test_failing' (23423332) panicked at src/lib.rs:27:9:
+assertion `left == right` failed: This test intentionally fails
+  left: 4
+ right: 5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+TEST FAILED: tests::test_failing
+
+SUITE: Test Suite Failed - 1 failed, 2 passed, 1 ignored, 0 measured, 0 filtered out in 0.00s
+
+--- STDERR ---

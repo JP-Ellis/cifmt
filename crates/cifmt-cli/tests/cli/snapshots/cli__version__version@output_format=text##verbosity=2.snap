@@ -8,4 +8,6 @@ Exit Code: 0
 [VERSION] ([HASH] [DATE])
 
 --- STDERR ---
-[RUN_TIME] DEBUG cifmt::logging: 52 Tracing initialized with verbosity level 2
+[2m[TIME][0m [34mDEBUG[0m [2mcifmt::logging[0m[2m:[0m [2m52:[0m Tracing initialized with verbosity level 2
+[2m[TIME][0m [32m INFO[0m [1mexecute[0m[2m:[0m [2mcifmt::commands::version[0m[2m:[0m [2m18:[0m enter
+[2m[TIME][0m [32m INFO[0m [1mexecute[0m[2m:[0m [2mcifmt::commands::version[0m[2m:[0m [2m18:[0m close [3mtime.busy[0m[2m=[0m[TIME] [3mtime.idle[0m[2m=[0m[TIME]

@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+#
+# Generate test data files for E2E tests.
+#
+# Usage:
+#   ./generate <filename>
+#
+# Examples:
+#   ./generate cargo-check.in
+
+set -euo pipefail
+
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Function to generate cargo-check.in
+generate_cargo_check_json() {
+  echo "Generating cargo-check.in..."
+
+  # Create a temporary project
+  TEMP_DIR=$(mktemp -d)
+  # shellcheck disable=SC2064
+  trap "rm -rf '$TEMP_DIR'" EXIT
+
+  cd "$TEMP_DIR"
+  cargo init --lib --quiet test-project
+  cd test-project
+
+  # Create source code with warnings and errors
+  cat >src/lib.rs <<'EOF'
+pub fn example() -> i32 {
+    let x = 42;
+    y
+}
+EOF
+
+  # Generate the JSON output
+  echo "Running cargo check..."
+  cargo check --message-format json >"$SCRIPT_DIR/cargo-check.in.tmp" 2>&1 || true
+
+  # Replace absolute paths with placeholders
+  echo "Replacing absolute paths with placeholders..."
+  # Resolve the real path (handles /private symlinks on macOS)
+  REAL_TEMP_DIR=$(cd "$TEMP_DIR" && pwd -P)
+  sed -E \
+    -e "s|$TEMP_DIR/test-project|/example/project|g" \
+    -e "s|$REAL_TEMP_DIR/test-project|/example/project|g" \
+    -e 's|/private/example/project|/example/project|g' \
+    -e 's|"[^"]*/.cargo/registry/[^"]*"|"/cargo/registry/[...]"|g' \
+    -e 's|"[^"]*/target/[^"]*"|"/example/project/target/[...]"|g' \
+    "$SCRIPT_DIR/cargo-check.in.tmp" >"$SCRIPT_DIR/cargo-check.in"
+
+  rm "$SCRIPT_DIR/cargo-check.in.tmp"
+
+  echo "Generated cargo-check.in"
+}
+
+# Function to generate cargo-libtest.in
+generate_cargo_libtest_json() {
+  echo "Generating cargo-libtest.in..."
+
+  # Create a temporary project
+  TEMP_DIR=$(mktemp -d)
+  # shellcheck disable=SC2064
+  trap "rm -rf '$TEMP_DIR'" EXIT
+
+  cd "$TEMP_DIR"
+  cargo init --lib --quiet test-project
+  cd test-project
+
+  # Create test code with some passing and failing tests
+  cat >src/lib.rs <<'EOF'
+pub fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add_positive() {
+        assert_eq!(add(2, 3), 5);
+    }
+
+    #[test]
+    fn test_add_negative() {
+        assert_eq!(add(-2, -3), -5);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_ignored() {
+        assert_eq!(add(1, 1), 2);
+    }
+
+    #[test]
+    fn test_failing() {
+        assert_eq!(add(2, 2), 5, "This test intentionally fails");
+    }
+}
+EOF
+
+  # Generate the JSON output
+  echo "Running cargo test..."
+  cargo test --message-format json -- -Z unstable-options --format json >"$SCRIPT_DIR/cargo-libtest.in.tmp" 2>&1 || true
+
+  # Replace absolute paths with placeholders
+  echo "Replacing absolute paths with placeholders..."
+  # Resolve the real path (handles /private symlinks on macOS)
+  REAL_TEMP_DIR=$(cd "$TEMP_DIR" && pwd -P)
+  sed -E \
+    -e "s|$TEMP_DIR/test-project|/example/project|g" \
+    -e "s|$REAL_TEMP_DIR/test-project|/example/project|g" \
+    -e 's|/private/example/project|/example/project|g' \
+    -e 's|"[^"]*/.cargo/registry/[^"]*"|"/cargo/registry/[...]"|g' \
+    -e 's|"[^"]*/target/[^"]*"|"/example/project/target/[...]"|g' \
+    "$SCRIPT_DIR/cargo-libtest.in.tmp" >"$SCRIPT_DIR/cargo-libtest.in"
+
+  rm "$SCRIPT_DIR/cargo-libtest.in.tmp"
+
+  echo "Generated cargo-libtest.in"
+}
+
+# Main script logic
+if [ $# -eq 0 ]; then
+  echo "Usage: $0 <filename>"
+  echo ""
+  echo "Available files:"
+  echo "  cargo-check.in    - Example cargo check output with warnings and errors"
+  echo "  cargo-libtest.in  - Example cargo test output with passing and failing tests"
+  exit 1
+fi
+
+FILENAME="$1"
+
+case "$FILENAME" in
+cargo-check.in)
+  generate_cargo_check_json
+  ;;
+cargo-libtest.in)
+  generate_cargo_libtest_json
+  ;;
+*)
+  echo "Error: Unknown file '$FILENAME'"
+  echo ""
+  echo "Available files:"
+  echo "  cargo-check.in    - Example cargo check output with warnings and errors"
+  echo "  cargo-libtest.in  - Example cargo test output with passing and failing tests"
+  exit 1
+  ;;
+esac
+
+echo ""
+echo "Test data generation complete!"

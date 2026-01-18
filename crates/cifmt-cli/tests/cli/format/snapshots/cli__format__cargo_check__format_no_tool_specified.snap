@@ -1,0 +1,10 @@
+---
+source: crates/cifmt-cli/tests/cli/format/cargo_check.rs
+expression: cmd.run_and_format_with_stdin(Some(&output))
+---
+Success: false
+Exit Code: 1
+--- STDOUT ---
+
+--- STDERR ---
+[2m[TIMESTAMP][0m [31mERROR[0m [2mcifmt[0m[2m:[0m [2m34:[0m Error executing command: Either --detect or a tool format must be specified

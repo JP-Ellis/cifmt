@@ -1,0 +1,16 @@
+---
+source: crates/cifmt-cli/tests/cli/format/cargo_check.rs
+expression: cmd.run_and_format_with_stdin(Some(&output))
+---
+Success: true
+Exit Code: 0
+--- STDOUT ---
+::error file=src/lib.rs,line=3,col=5,endLine=3,endColumn=6,title=error: E0425::cannot find value `y` in this scope
+::notice file=src/lib.rs,line=3,col=5,title=help::a local variable with a similar name exists
+
+::notice title=failure-note::For more information about this error, try `rustc --explain E0425`.
+
+::error title=Build Failed::Build failed
+
+
+--- STDERR ---

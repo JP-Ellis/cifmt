@@ -4,8 +4,9 @@
 // https://github.com/rust-lang/rust-clippy/issues/15764
 #![cfg(test)]
 
-use std::{fmt::Write, path::PathBuf};
+use std::{fmt, fmt::Write as _, path::PathBuf};
 
+mod format;
 mod version;
 
 /// Default replacements when formatting command output
@@ -20,7 +21,23 @@ const DEFAULT_FILTERS: &[(&str, &str)] = &[
         "[VERSION] ([HASH] [DATE])",
     ),
     (r"\d+\.\d+\.\d+(\.dev\d+)?", "[VERSION]"),
-    // Debug logging with timestamps
+    // Filter ISO 8601 timestamps in error logs (e.g., 2026-01-18T04:36:40.825075Z)
+    (
+        r"\x1b\[2m\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z\x1b\[0m",
+        "[2m[TIMESTAMP][0m",
+    ),
+    // Debug logging with timestamps - filter timestamps with microsecond precision
+    (r"\x1b\[2m\s*\d+\.\d+s\x1b\[0m", "[2m[TIME][0m"),
+    // Filter time.busy and time.idle values in logs
+    (
+        r"\x1b\[3mtime\.busy\x1b\[0m\x1b\[2m=\x1b\[0m[\d.]+[µnm]?s",
+        "[3mtime.busy[0m[2m=[0m[TIME]",
+    ),
+    (
+        r"\x1b\[3mtime\.idle\x1b\[0m\x1b\[2m=\x1b\[0m[\d.]+[µnm]?s",
+        "[3mtime.idle[0m[2m=[0m[TIME]",
+    ),
+    // Debug logging with timestamps (legacy format)
     (
         r"\x1b\[\d+m\s*\d+\.\d{9}s\x1b\[0m \x1b\[\d+m([A-Z]+)\x1b\[0m \x1b\[\d+m([\w:]+)\x1b\[0m\x1b\[\d+m:\x1b\[0m \x1b\[\d+m(\d+):\x1b\[0m",
         "[RUN_TIME] $1 $2: $3",
@@ -96,33 +113,84 @@ impl TestCommand {
         self
     }
 
+    /// Run the command and format the output as a snapshot string.
+    ///
+    /// # Returns
+    ///
+    /// A formatted string containing the command's stdout, stderr, and exit status.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the command fails to execute.
     #[must_use]
     pub fn run_and_format(&self) -> String {
+        self.run_and_format_with_stdin(None)
+    }
+
+    /// Run the command with stdin input and format the output as a snapshot string.
+    ///
+    /// # Arguments
+    ///
+    /// * `stdin_input` - Optional string to write to the command's stdin
+    ///
+    /// # Returns
+    ///
+    /// A formatted string containing the command's stdout, stderr, and exit status.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the command fails to execute or stdin write fails.
+    #[must_use]
+    pub fn run_and_format_with_stdin(&self, stdin_input: Option<&str>) -> String {
         let mut cmd = std::process::Command::new(&self.cli);
 
         cmd.current_dir(&self.cwd);
-
         cmd.args(&self.args);
-
         cmd.env_clear();
         cmd.envs([("LANG", "C"), ("LC_ALL", "C"), ("TZ", "UTC")]);
         cmd.envs(self.env.iter().map(|(k, v)| (k.as_str(), v.as_str())));
 
-        let output = cmd.output().unwrap_or_else(|e| {
-            panic!("Failed to execute command '{}': {}", self.cli.display(), e)
-        });
+        let output = if let Some(input) = stdin_input {
+            use std::io::Write as _;
+            cmd.stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped());
+
+            let mut process = cmd.spawn().unwrap_or_else(|e| {
+                panic!("Failed to spawn command '{}': {}", self.cli.display(), e)
+            });
+
+            if let Some(mut stdin) = process.stdin.take() {
+                stdin
+                    .write_all(input.as_bytes())
+                    .expect("Failed to write to stdin");
+            }
+
+            process.wait_with_output().unwrap_or_else(|e| {
+                panic!("Failed to wait for command '{}': {}", self.cli.display(), e)
+            })
+        } else {
+            cmd.output().unwrap_or_else(|e| {
+                panic!("Failed to execute command '{}': {}", self.cli.display(), e)
+            })
+        };
 
         let mut snapshot = String::new();
 
-        snapshot.push_str(&format!("Success: {}\n", output.status.success()));
-        snapshot.push_str(&format!(
-            "Exit Code: {}\n",
-            output.status.code().unwrap_or(!0_i32)
-        ));
-        snapshot.push_str("--- STDOUT ---\n");
-        snapshot.push_str(&String::from_utf8_lossy(&output.stdout));
-        snapshot.push_str("\n--- STDERR ---\n");
-        snapshot.push_str(&String::from_utf8_lossy(&output.stderr));
+        write!(
+            snapshot,
+            "Success: {}\n\
+            Exit Code: {}\n\
+            --- STDOUT ---\n\
+            {}\n\
+            --- STDERR ---\n\
+            {}",
+            output.status.success(),
+            output.status.code().unwrap_or(!0_i32),
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
+        )
+        .expect("Failed to write command output to snapshot");
 
         for (pattern, replacement) in self
             .filters

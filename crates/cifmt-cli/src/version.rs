@@ -4,7 +4,7 @@
 //! compilation, as exposed through various `CARGO_BUILD_*` environment
 //! variables.
 
-use std::fmt;
+use std::{fmt, fmt::Write as _};
 
 use serde::Serialize;
 
@@ -13,6 +13,7 @@ use serde::Serialize;
 /// This consists of a version tuple parsed from git tags, along with optional
 /// commit information if available.
 #[derive(Debug, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
 pub struct Version {
     /// The version tuple.
     ///
@@ -27,7 +28,13 @@ pub struct Version {
 }
 
 impl Version {
-    fn as_semver(&self) -> String {
+    /// Format the version as a semantic version string.
+    ///
+    /// Examples:
+    /// - `1.2.3` - at a tag
+    /// - `1.2.3-dev5+abcdef0` - 5 commits after tag
+    #[must_use]
+    pub fn as_semver(&self) -> String {
         let mut semver = format!("{}.{}.{}", self.version.0, self.version.1, self.version.2);
 
         if let Some(CommitInfo {
@@ -37,7 +44,8 @@ impl Version {
         }) = &self.commit_info
             && *d > 0
         {
-            semver.push_str(&format!("-dev{d}+{short_commit_hash}"));
+            #[expect(clippy::expect_used, reason = "Writing to a String should not fail")]
+            write!(semver, "-dev{d}+{short_commit_hash}").expect("Failed to write to semver");
         }
 
         semver
@@ -58,6 +66,10 @@ impl Default for Version {
     ///
     /// This function will panic if the version information cannot be parsed
     /// (due to an invalid format).
+    #[expect(
+        clippy::expect_used,
+        reason = "Parsing build-time version should not fail"
+    )]
     fn default() -> Self {
         // Try to get version from git tag, fallback to CARGO_PKG_VERSION
         let mut version_str = option_env!("CARGO_BUILD_TAG").unwrap_or(env!("CARGO_PKG_VERSION"));
@@ -136,6 +148,7 @@ impl From<Version> for clap::builder::Str {
 
 /// Information about the git repository where the CLI was built.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
 pub struct CommitInfo {
     /// Short commit hash.
     pub short_commit_hash: String,
@@ -166,7 +179,12 @@ impl CommitInfo {
         let commit_date = option_env!("CARGO_BUILD_COMMIT_DATE")?;
         let short_commit_hash = option_env!("CARGO_BUILD_COMMIT_SHORT_HASH").unwrap_or_else(|| {
             // Fallback to first 7 characters of full hash
-            &commit_hash[0..7.min(commit_hash.len())]
+            let char_index = commit_hash
+                .char_indices()
+                .nth(7)
+                .map_or(commit_hash.len(), |(idx, _)| idx);
+            #[expect(clippy::string_slice, reason = "Index is on char boundary")]
+            &commit_hash[0..char_index]
         });
 
         let tag = option_env!("CARGO_BUILD_TAG");
@@ -177,7 +195,7 @@ impl CommitInfo {
             short_commit_hash: short_commit_hash.to_owned(),
             commit_hash: commit_hash.to_owned(),
             commit_date: commit_date.to_owned(),
-            tag: tag.map(|s| s.to_owned()),
+            tag: tag.map(std::borrow::ToOwned::to_owned),
             tag_distance,
         })
     }
@@ -203,10 +221,10 @@ pub(crate) mod tests {
         let version = Version {
             version: (1, 2, 3),
             commit_info: Some(CommitInfo {
-                short_commit_hash: "abcdef0".to_string(),
-                commit_hash: "abcdef0123456789abcdef0123456789abcdef01".to_string(),
-                commit_date: "2025-01-15".to_string(),
-                tag: Some("v1.2.3".to_string()),
+                short_commit_hash: "abcdef0".to_owned(),
+                commit_hash: "abcdef0123456789abcdef0123456789abcdef01".to_owned(),
+                commit_date: "2025-01-15".to_owned(),
+                tag: Some("v1.2.3".to_owned()),
                 tag_distance: Some(0),
             }),
         };
@@ -218,10 +236,10 @@ pub(crate) mod tests {
         let version = Version {
             version: (1, 2, 3),
             commit_info: Some(CommitInfo {
-                short_commit_hash: "abcdef0".to_string(),
-                commit_hash: "abcdef0123456789abcdef0123456789abcdef01".to_string(),
-                commit_date: "2025-01-15".to_string(),
-                tag: Some("v1.2.3".to_string()),
+                short_commit_hash: "abcdef0".to_owned(),
+                commit_hash: "abcdef0123456789abcdef0123456789abcdef01".to_owned(),
+                commit_date: "2025-01-15".to_owned(),
+                tag: Some("v1.2.3".to_owned()),
                 tag_distance: Some(5),
             }),
         };
@@ -233,10 +251,10 @@ pub(crate) mod tests {
         let version = Version {
             version: (1, 2, 3),
             commit_info: Some(CommitInfo {
-                short_commit_hash: "abcdef0".to_string(),
-                commit_hash: "abcdef0123456789abcdef0123456789abcdef01".to_string(),
-                commit_date: "2025-01-15".to_string(),
-                tag: Some("v1.2.3".to_string()),
+                short_commit_hash: "abcdef0".to_owned(),
+                commit_hash: "abcdef0123456789abcdef0123456789abcdef01".to_owned(),
+                commit_date: "2025-01-15".to_owned(),
+                tag: Some("v1.2.3".to_owned()),
                 tag_distance: Some(0),
             }),
         };
@@ -248,10 +266,10 @@ pub(crate) mod tests {
         let version = Version {
             version: (1, 2, 3),
             commit_info: Some(CommitInfo {
-                short_commit_hash: "abcdef0".to_string(),
-                commit_hash: "abcdef0123456789abcdef0123456789abcdef01".to_string(),
-                commit_date: "2025-01-15".to_string(),
-                tag: Some("v1.2.3".to_string()),
+                short_commit_hash: "abcdef0".to_owned(),
+                commit_hash: "abcdef0123456789abcdef0123456789abcdef01".to_owned(),
+                commit_date: "2025-01-15".to_owned(),
+                tag: Some("v1.2.3".to_owned()),
                 tag_distance: Some(5),
             }),
         };

@@ -1,4 +1,4 @@
-//! Tests for the format command with various tools
+//! Tests for the format command with various tools.
 
 #![cfg(test)]
 

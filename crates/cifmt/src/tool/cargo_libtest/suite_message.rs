@@ -196,7 +196,7 @@ pub(crate) mod tests {
     use super::SuiteMessage;
     use serde_json::json;
 
-    /// Test data for suite messages: (JSON value, expected message, description)
+    /// Test data for suite messages: (JSON value, expected message, description).
     pub fn cases() -> impl Iterator<Item = (String, serde_json::Value, SuiteMessage)> {
         [
             (

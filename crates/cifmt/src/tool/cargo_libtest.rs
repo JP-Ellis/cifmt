@@ -3,7 +3,7 @@
 //! Support for parsing and formatting messages from `cargo test --format json`.
 //!
 //! The libtest JSON format is documented in the Rust standard library:
-//! <https://github.com/rust-lang/rust/blob/master/library/test/src/formatters/json.rs>
+//! <https://github.com/rust-lang/rust/blob/master/library/test/src/formatters/json.rs>.
 
 mod bench_message;
 mod report_message;

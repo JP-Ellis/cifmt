@@ -33,6 +33,7 @@ impl Version {
     /// Examples:
     /// - `1.2.3` - at a tag
     /// - `1.2.3-dev5+abcdef0` - 5 commits after tag
+    #[inline]
     #[must_use]
     pub fn as_semver(&self) -> String {
         let mut semver = format!("{}.{}.{}", self.version.0, self.version.1, self.version.2);
@@ -70,6 +71,7 @@ impl Default for Version {
         clippy::expect_used,
         reason = "Parsing build-time version should not fail"
     )]
+    #[inline]
     fn default() -> Self {
         // Try to get version from git tag, fallback to CARGO_PKG_VERSION
         let mut version_str = option_env!("CARGO_BUILD_TAG").unwrap_or(env!("CARGO_PKG_VERSION"));
@@ -97,11 +99,12 @@ impl Default for Version {
 }
 
 impl fmt::Display for Version {
-    /// Format version as: `X.Y.Z[.devN] (hash date)`
+    /// Format version as: `X.Y.Z[.devN] (hash date)`.
     ///
     /// Examples:
     /// - `1.2.3 (abcdef0 2025-01-15)` - at a tag
     /// - `1.2.3.dev5 (abcdef0 2025-01-15)` - 5 commits after tag
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -129,18 +132,21 @@ impl fmt::Display for Version {
 }
 
 impl PartialOrd for Version {
+    #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for Version {
+    #[inline]
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.version.cmp(&other.version)
     }
 }
 
 impl From<Version> for clap::builder::Str {
+    #[inline]
     fn from(v: Version) -> Self {
         clap::builder::Str::from(v.to_string())
     }

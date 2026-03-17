@@ -5,10 +5,10 @@
 //! other cargo commands that emit JSON messages.
 //!
 //! The JSON message format is documented in the Cargo book:
-//! <https://doc.rust-lang.org/cargo/reference/external-tools.html#json-messages>
+//! <https://doc.rust-lang.org/cargo/reference/external-tools.html#json-messages>.
 //!
 //! It is also closely linked to the `rustc` JSON diagnostic format:
-//! <https://doc.rust-lang.org/rustc/json.html>
+//! <https://doc.rust-lang.org/rustc/json.html>.
 
 mod build_finished;
 mod build_script_executed;

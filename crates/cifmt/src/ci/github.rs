@@ -15,7 +15,7 @@ use crate::ci::Platform;
 /// annotating files, grouping messages, and more.
 ///
 /// For more information, see:
-/// <https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions>
+/// <https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions>.
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub struct GitHub;

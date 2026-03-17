@@ -256,7 +256,7 @@ pub(crate) mod tests {
     use super::TestMessage;
     use serde_json::json;
 
-    /// Test data for test messages: (JSON value, message instance, description)
+    /// Test data for test messages: (JSON value, message instance, description).
     pub fn cases() -> impl Iterator<Item = (String, serde_json::Value, TestMessage)> {
         [
             (

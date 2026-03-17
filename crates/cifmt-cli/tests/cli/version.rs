@@ -21,12 +21,8 @@ fn cmd() -> TestCommand {
             r#""commit_hash": "[HASH]""#,
         )
         .filter(
-            r#""build_date": "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z""#,
-            r#""build_date": "[DATETIME]""#,
-        )
-        .filter(
-            r#""build_date": "\d{4}-\d{2}-\d{2}""#,
-            r#""build_date": "[DATE]""#,
+            r#""commit_date": "\d{4}-\d{2}-\d{2}""#,
+            r#""commit_date": "[DATE]""#,
         )
         .filter(r#""tag": (null|"[a-zA-Z0-9\.-]+")"#, r#""tag": "[TAG]""#)
         .filter(

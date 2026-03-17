@@ -24,7 +24,7 @@ fn main() {
     }
 }
 
-/// Locate the Git depository
+/// Locate the Git depository.
 ///
 /// This function attempts to find the Git repository by traversing
 /// upwards from the current directory. If a `.git` directory is found,

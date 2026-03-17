@@ -19,10 +19,10 @@ use anyhow::Result;
 /// Available subcommands for the CLI.
 #[derive(Debug, clap::Subcommand)]
 pub enum Command {
-    /// Format tool output for CI platforms
+    /// Format tool output for CI platforms.
     Format(format::Args),
 
-    /// Show version information
+    /// Show version information.
     Version(version::Args),
 }
 

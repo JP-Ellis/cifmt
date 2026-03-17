@@ -7,12 +7,13 @@ pub(crate) mod commands;
 mod logging;
 pub mod version;
 
+/// Global arguments for the CLI.
 #[derive(clap::Parser, Debug)]
 #[command(author, name = "cifmt")]
 #[command(about = "CI message formatter")]
 #[command(version = version::Version::default())]
 struct GlobalArgs {
-    /// Increase verbosity level: -v: info, -vv: debug with timing
+    /// Increase verbosity level: -v: info, -vv: debug with timing.
     #[clap(short, long, global = true, action = clap::ArgAction::Count)]
     verbosity: u8,
 

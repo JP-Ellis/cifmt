@@ -1,4 +1,4 @@
-//! Supported CI platforms
+//! Supported CI platforms.
 //!
 //! This module defines a number of [new
 //! types](https://doc.rust-lang.org/rust-by-example/generics/new_types.html)

@@ -9,7 +9,7 @@ use anyhow::Result;
 /// Arguments for the version command.
 #[derive(Debug, clap::Args)]
 pub(crate) struct Args {
-    /// Output format
+    /// Output format.
     #[arg(long, value_enum, default_value = "text")]
     output_format: OutputFormat,
 }

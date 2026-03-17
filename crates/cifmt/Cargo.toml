@@ -4,8 +4,6 @@ description = "CI message formatter"
 name        = "cifmt"
 version     = "1.0.0"
 
-authors = ["JP-Ellis <josh@jpellis.me>"]
-
 edition = "2024"
 
 categories = ["development-tools::continuous-integration"]

@@ -38,7 +38,7 @@ pub(crate) mod tests {
     use super::ReportMessage;
     use serde_json::json;
 
-    /// Test data for report messages: (JSON value, message instance, description)
+    /// Test data for report messages: (JSON value, message instance, description).
     pub fn cases() -> impl Iterator<Item = (String, serde_json::Value, ReportMessage)> {
         [(
             "report".to_owned(),

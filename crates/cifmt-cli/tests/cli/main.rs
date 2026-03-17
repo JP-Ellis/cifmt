@@ -1,4 +1,4 @@
-//! CLI Interface Tests
+//! CLI Interface Tests.
 
 // TODO: Remove once upstream issue is fixed
 // https://github.com/rust-lang/rust-clippy/issues/15764
@@ -9,7 +9,7 @@ use std::{fmt, fmt::Write as _, path::PathBuf};
 mod format;
 mod version;
 
-/// Default replacements when formatting command output
+/// Default replacements when formatting command output.
 ///
 /// These are applied in order, so more specific filters should go later. The
 /// first filter is the regex to match, and the second is the replacement
@@ -43,7 +43,7 @@ const DEFAULT_FILTERS: &[(&str, &str)] = &[
         "[RUN_TIME] $1 $2: $3",
     ),
 ];
-/// A test context for CLI tests
+/// A test context for CLI tests.
 ///
 /// This is used to set up a consistent environment to execute the CLI commands.
 pub struct TestCommand {
@@ -55,15 +55,17 @@ pub struct TestCommand {
 }
 
 impl TestCommand {
-    /// Push a new argument to the command
+    /// Push a new argument to the command.
     #[must_use]
+    #[inline]
     pub fn arg(mut self, arg: impl Into<String>) -> Self {
         self.args.push(arg.into());
         self
     }
 
-    /// Push multiple arguments to the command
+    /// Push multiple arguments to the command.
     #[must_use]
+    #[inline]
     pub fn args<I, S>(mut self, args: I) -> Self
     where
         I: IntoIterator<Item = S>,
@@ -73,15 +75,17 @@ impl TestCommand {
         self
     }
 
-    /// Set an environment variable for the command
+    /// Set an environment variable for the command.
     #[must_use]
+    #[inline]
     pub fn env(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         self.env.push((key.into(), value.into()));
         self
     }
 
-    /// Set multiple environment variables for the command
+    /// Set multiple environment variables for the command.
     #[must_use]
+    #[inline]
     pub fn envs<I, K, V>(mut self, envs: I) -> Self
     where
         I: IntoIterator<Item = (K, V)>,
@@ -93,15 +97,17 @@ impl TestCommand {
         self
     }
 
-    /// Add an insta filter to the command
+    /// Add an insta filter to the command.
     #[must_use]
+    #[inline]
     pub fn filter(mut self, pattern: impl Into<String>, replacement: impl Into<String>) -> Self {
         self.filters.push((pattern.into(), replacement.into()));
         self
     }
 
-    /// Add multiple insta filters to the command
+    /// Add multiple insta filters to the command.
     #[must_use]
+    #[inline]
     pub fn filters<I, P, R>(mut self, filters: I) -> Self
     where
         I: IntoIterator<Item = (P, R)>,
@@ -123,11 +129,13 @@ impl TestCommand {
     ///
     /// Panics if the command fails to execute.
     #[must_use]
+    #[inline]
     pub fn run_and_format(&self) -> String {
         self.run_and_format_with_stdin(None)
     }
 
-    /// Run the command with stdin input and format the output as a snapshot string.
+    /// Run the command with stdin input and format the output as a snapshot
+    /// string.
     ///
     /// # Arguments
     ///
@@ -135,12 +143,14 @@ impl TestCommand {
     ///
     /// # Returns
     ///
-    /// A formatted string containing the command's stdout, stderr, and exit status.
+    /// A formatted string containing the command's stdout, stderr, and exit
+    /// status.
     ///
     /// # Panics
     ///
     /// Panics if the command fails to execute or stdin write fails.
     #[must_use]
+    #[inline]
     pub fn run_and_format_with_stdin(&self, stdin_input: Option<&str>) -> String {
         let mut cmd = std::process::Command::new(&self.cli);
 
@@ -209,6 +219,7 @@ impl TestCommand {
 }
 
 impl Default for TestCommand {
+    #[inline]
     fn default() -> Self {
         Self {
             cli: env!("CARGO_BIN_EXE_cifmt").into(),
@@ -221,8 +232,9 @@ impl Default for TestCommand {
 }
 
 /// Implement `Display` so that insta can execute the command and verify the
-/// output
+/// output.
 impl fmt::Display for TestCommand {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.run_and_format())
     }
@@ -242,9 +254,9 @@ macro_rules! set_snapshot_suffix {
     }
 }
 
-/// Re-export the macros
+/// Re-export the macros.
 ///
-/// See: <https://stackoverflow.com/a/31749071/3549270>
+/// See: <https://stackoverflow.com/a/31749071/3549270>.
 #[allow(
     clippy::allow_attributes,
     unused_imports,

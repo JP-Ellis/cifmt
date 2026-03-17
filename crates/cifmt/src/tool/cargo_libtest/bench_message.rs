@@ -51,7 +51,7 @@ pub(crate) mod tests {
     use super::BenchMessage;
     use serde_json::json;
 
-    /// Test data for bench messages: (JSON value, message instance, description)
+    /// Test data for bench messages: (JSON value, message instance, description).
     pub fn cases() -> impl Iterator<Item = (String, serde_json::Value, BenchMessage)> {
         [(
             "bench".to_owned(),

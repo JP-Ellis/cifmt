@@ -1,19 +1,16 @@
 #:schema https://www.schemastore.org/cargo.json
+
 [package]
-description = "CI message formatter"
 name        = "cifmt"
 version     = "1.0.0"
+description = "CI message formatter"
+readme      = { workspace = true }
+repository  = { workspace = true }
+license     = { workspace = true }
+keywords    = ["ci", "formatter"]
+categories  = ["development-tools::continuous-integration"]
 
 edition = "2024"
-
-categories = ["development-tools::continuous-integration"]
-keywords   = ["ci", "formatter"]
-license    = { workspace = true }
-readme     = { workspace = true }
-repository = { workspace = true }
-
-[lints]
-workspace = true
 
 [dependencies]
 bon        = { workspace = true }
@@ -26,3 +23,6 @@ tracing    = { workspace = true }
 insta             = { workspace = true }
 pretty_assertions = { workspace = true }
 rstest            = { workspace = true }
+
+[lints]
+workspace = true
